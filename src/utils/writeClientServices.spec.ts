@@ -30,7 +30,12 @@ describe('writeClientServices', () => {
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
                 baseHttpRequest: () => 'baseHttpRequest',
-                concreteHttpRequest: () => 'concreteHttpRequest',
+                request: () => 'request',
+                httpRequest: {
+                    fetch: () => 'fetchRequest',
+                    node: () => 'nodeRequest',
+                    xhr: () => 'xhrRequest',
+                },
             },
         };
 

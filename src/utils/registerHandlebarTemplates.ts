@@ -5,7 +5,6 @@ import templateCoreApiError from '../templates/core/ApiError.hbs';
 import templateCoreApiRequestOptions from '../templates/core/ApiRequestOptions.hbs';
 import templateCoreApiResult from '../templates/core/ApiResult.hbs';
 import templateCoreBaseHttpClient from '../templates/core/BaseHttpRequest.hbs';
-import templateCoreConcreteHttpClient from '../templates/core/ConcreteHttpRequest.hbs';
 import fetchGetHeaders from '../templates/core/fetch/getHeaders.hbs';
 import fetchGetRequestBody from '../templates/core/fetch/getRequestBody.hbs';
 import fetchGetResponseBody from '../templates/core/fetch/getResponseBody.hbs';
@@ -30,6 +29,7 @@ import nodeGetResponseHeader from '../templates/core/node/getResponseHeader.hbs'
 import nodeRequest from '../templates/core/node/request.hbs';
 import nodeSendRequest from '../templates/core/node/sendRequest.hbs';
 import templateCoreSettings from '../templates/core/OpenAPI.hbs';
+import templateCoreRequest from '../templates/core/request.hbs';
 import xhrGetHeaders from '../templates/core/xhr/getHeaders.hbs';
 import xhrGetRequestBody from '../templates/core/xhr/getRequestBody.hbs';
 import xhrGetResponseBody from '../templates/core/xhr/getResponseBody.hbs';
@@ -84,7 +84,12 @@ export interface Templates {
         apiRequestOptions: Handlebars.TemplateDelegate;
         apiResult: Handlebars.TemplateDelegate;
         baseHttpRequest: Handlebars.TemplateDelegate;
-        concreteHttpRequest: Handlebars.TemplateDelegate;
+        request: Handlebars.TemplateDelegate;
+        httpRequest: {
+            fetch: Handlebars.TemplateDelegate;
+            node: Handlebars.TemplateDelegate;
+            xhr: Handlebars.TemplateDelegate;
+        };
     };
 }
 
@@ -110,7 +115,12 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
             apiRequestOptions: Handlebars.template(templateCoreApiRequestOptions),
             apiResult: Handlebars.template(templateCoreApiResult),
             baseHttpRequest: Handlebars.template(templateCoreBaseHttpClient),
-            concreteHttpRequest: Handlebars.template(templateCoreConcreteHttpClient),
+            request: Handlebars.template(templateCoreRequest),
+            httpRequest: {
+                fetch: Handlebars.template(fetchRequest),
+                node: Handlebars.template(nodeRequest),
+                xhr: Handlebars.template(xhrRequest),
+            },
         },
     };
 

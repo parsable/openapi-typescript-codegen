@@ -29,7 +29,12 @@ describe('writeClientIndex', () => {
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
                 baseHttpRequest: () => 'baseHttpClient',
-                concreteHttpRequest: () => 'concreteHttpClient',
+                request: () => 'request',
+                httpRequest: {
+                    fetch: () => 'fetchRequest',
+                    node: () => 'nodeRequest',
+                    xhr: () => 'xhrRequest',
+                },
             },
         };
 

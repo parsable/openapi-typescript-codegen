@@ -29,9 +29,11 @@ export async function writeClientCore(client: Client, templates: Templates, outp
     await writeFile(resolve(outputPath, 'ApiResult.ts'), templates.core.apiResult({}));
     if (exportClient) {
         await writeFile(resolve(outputPath, 'BaseHttpRequest.ts'), templates.core.baseHttpRequest({}));
-        await writeFile(resolve(outputPath, `${getHttpRequestName(httpClient)}.ts`), templates.core.concreteHttpRequest(context));
+        for (const client of Object.values(HttpClient)) {
+            await writeFile(resolve(outputPath, `${getHttpRequestName(client)}.ts`), templates.core.httpRequest[client](context));
+        }
     } else {
-        await writeFile(resolve(outputPath, `request.ts`), templates.core.concreteHttpRequest(context));
+        await writeFile(resolve(outputPath, `request.ts`), templates.core.request(context));
     }
 
     if (request) {

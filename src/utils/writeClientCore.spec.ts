@@ -28,7 +28,12 @@ describe('writeClientCore', () => {
             apiRequestOptions: () => 'apiRequestOptions',
             apiResult: () => 'apiResult',
             baseHttpRequest: () => 'baseHttpRequest',
-            concreteHttpRequest: () => 'concreteHttpRequest',
+            request: () => 'request',
+            httpRequest: {
+                fetch: () => 'fetchRequest',
+                node: () => 'nodeRequest',
+                xhr: () => 'xhrRequest',
+            },
         },
     };
 
@@ -39,7 +44,7 @@ describe('writeClientCore', () => {
         expect(writeFile).toBeCalledWith('/ApiError.ts', 'apiError');
         expect(writeFile).toBeCalledWith('/ApiRequestOptions.ts', 'apiRequestOptions');
         expect(writeFile).toBeCalledWith('/ApiResult.ts', 'apiResult');
-        expect(writeFile).toBeCalledWith('/request.ts', 'concreteHttpRequest');
+        expect(writeFile).toBeCalledWith('/request.ts', 'request');
     });
 
     it('should write to filesystem when exportClient true', async () => {
@@ -50,6 +55,8 @@ describe('writeClientCore', () => {
         expect(writeFile).toBeCalledWith('/ApiRequestOptions.ts', 'apiRequestOptions');
         expect(writeFile).toBeCalledWith('/ApiResult.ts', 'apiResult');
         expect(writeFile).toBeCalledWith('/BaseHttpRequest.ts', 'baseHttpRequest');
-        expect(writeFile).toBeCalledWith('/FetchHttpRequest.ts', 'concreteHttpRequest');
+        expect(writeFile).toBeCalledWith('/FetchHttpRequest.ts', 'fetchRequest');
+        expect(writeFile).toBeCalledWith('/NodeHttpRequest.ts', 'nodeRequest');
+        expect(writeFile).toBeCalledWith('/XhrHttpRequest.ts', 'xhrRequest');
     });
 });

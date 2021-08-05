@@ -29,7 +29,7 @@ describe('writeClient', () => {
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
                 baseHttpRequest: () => 'baseHttpRequest',
-                concreteHttpRequest: () => 'concreteHttpRequest',
+                request: () => 'concreteHttpRequest',
             },
         };
 
