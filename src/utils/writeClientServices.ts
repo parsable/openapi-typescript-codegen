@@ -8,6 +8,7 @@ import { formatCode as f } from './formatCode';
 import { formatIndentation as i } from './formatIndentation';
 import { isDefined } from './isDefined';
 import type { Templates } from './registerHandlebarTemplates';
+const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
 
 /**
  * Generate Services using the Handlebar template and write to disk.
@@ -19,6 +20,7 @@ import type { Templates } from './registerHandlebarTemplates';
  * @param useOptions Use options or arguments functions
  * @param indent Indentation options (4, 2 or tab)
  * @param postfix Service name postfix
+ * @param exportClient Create client class
  * @param clientName Custom client class name
  */
 export const writeClientServices = async (
@@ -30,6 +32,7 @@ export const writeClientServices = async (
     useOptions: boolean,
     indent: Indent,
     postfix: string,
+    exportClient: boolean,
     clientName?: string
 ): Promise<void> => {
     for (const service of services) {
@@ -40,7 +43,7 @@ export const writeClientServices = async (
             useUnionTypes,
             useOptions,
             postfix,
-            exportClient: isDefined(clientName),
+            exportClient: isDefined(clientName) || exportClient,
         });
         await writeFile(file, i(f(templateResult), indent));
     }

@@ -52,6 +52,7 @@ import xhrGetResponseBody from '../templates/core/xhr/getResponseBody.hbs';
 import xhrGetResponseHeader from '../templates/core/xhr/getResponseHeader.hbs';
 import xhrRequest from '../templates/core/xhr/request.hbs';
 import xhrSendRequest from '../templates/core/xhr/sendRequest.hbs';
+import templateAppClient from '../templates/exportAppClient.hbs';
 import templateExportModel from '../templates/exportModel.hbs';
 import templateExportSchema from '../templates/exportSchema.hbs';
 import templateExportService from '../templates/exportService.hbs';

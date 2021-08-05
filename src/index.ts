@@ -26,6 +26,7 @@ export type Options = {
     indent?: Indent;
     postfixServices?: string;
     postfixModels?: string;
+    exportClient?: boolean;
     request?: string;
     write?: boolean;
 };
@@ -47,6 +48,7 @@ export type Options = {
  * @param indent Indentation options (4, 2 or tab)
  * @param postfixServices Service name postfix
  * @param postfixModels Model name postfix
+ * @param exportClient: Generate client class
  * @param request Path to custom request file
  * @param write Write the files to disk (true or false)
  */
@@ -64,6 +66,7 @@ export const generate = async ({
     indent = Indent.SPACE_4,
     postfixServices = 'Service',
     postfixModels = '',
+    exportClient = false,
     request,
     write = true,
 }: Options): Promise<void> => {
@@ -78,7 +81,7 @@ export const generate = async ({
     switch (openApiVersion) {
         case OpenApiVersion.V2: {
             const client = parseV2(openApi);
-            const clientFinal = postProcessClient(client);
+            const clientFinal = postProcessClient(client, exportClient);
             if (!write) break;
             await writeClient(
                 clientFinal,
@@ -94,6 +97,7 @@ export const generate = async ({
                 indent,
                 postfixServices,
                 postfixModels,
+                exportClient,
                 clientName,
                 request
             );
@@ -102,7 +106,7 @@ export const generate = async ({
 
         case OpenApiVersion.V3: {
             const client = parseV3(openApi);
-            const clientFinal = postProcessClient(client);
+            const clientFinal = postProcessClient(client, exportClient);
             if (!write) break;
             await writeClient(
                 clientFinal,
@@ -118,6 +122,7 @@ export const generate = async ({
                 indent,
                 postfixServices,
                 postfixModels,
+                exportClient,
                 clientName,
                 request
             );

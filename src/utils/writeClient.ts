@@ -30,6 +30,7 @@ import { writeClientServices } from './writeClientServices';
  * @param indent Indentation options (4, 2 or tab)
  * @param postfixServices Service name postfix
  * @param postfixModels Model name postfix
+ * @param exportClient: Generate client class
  * @param clientName Custom client class name
  * @param request Path to custom request file
  */
@@ -47,6 +48,7 @@ export const writeClient = async (
     indent: Indent,
     postfixServices: string,
     postfixModels: string,
+    exportClient: boolean,
     clientName?: string,
     request?: string
 ): Promise<void> => {
@@ -63,7 +65,7 @@ export const writeClient = async (
     if (exportCore) {
         await rmdir(outputPathCore);
         await mkdir(outputPathCore);
-        await writeClientCore(client, templates, outputPathCore, httpClient, indent, clientName, request);
+        await writeClientCore(client, templates, outputPathCore, httpClient, indent, exportClient, clientName, request);
     }
 
     if (exportServices) {
@@ -78,6 +80,7 @@ export const writeClient = async (
             useOptions,
             indent,
             postfixServices,
+            exportClient,
             clientName
         );
     }
@@ -94,12 +97,16 @@ export const writeClient = async (
         await writeClientModels(client.models, templates, outputPathModels, httpClient, useUnionTypes, indent);
     }
 
-    if (isDefined(clientName)) {
+    if (isDefined(clientName) || exportClient) {
         await mkdir(outputPath);
-        await writeClientClass(client, templates, outputPath, httpClient, clientName, indent, postfixServices);
+        await writeClientClass(client, templates, outputPath, httpClient, clientName || 'AppClient', indent, postfixServices);
     }
 
-    if (exportCore || exportServices || exportSchemas || exportModels) {
+    // if (exportClient) {
+    //    await writeAppClient(client, templates, outputPath, httpClient, clientName);
+    // }
+
+    if (exportCore || exportServices || exportSchemas || exportModels || exportClient) {
         await mkdir(outputPath);
         await writeClientIndex(
             client,
@@ -112,6 +119,7 @@ export const writeClient = async (
             exportSchemas,
             postfixServices,
             postfixModels,
+            exportClient,
             clientName
         );
     }

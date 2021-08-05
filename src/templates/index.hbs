@@ -13,6 +13,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 {{/if}}
+{{/if}}
 {{#if @root.exportModels}}
 {{#if models}}
 
@@ -44,4 +45,8 @@ export { ${{{name}}} } from './schemas/${{{name}}}';
 export { {{{name}}}{{{@root.postfixServices}}} } from './services/{{{name}}}{{{@root.postfixServices}}}';
 {{/each}}
 {{/if}}
+{{/if}}
+
+{{#if @root.exportClient}}
+export { {{{clientName}}} } from './client';
 {{/if}}

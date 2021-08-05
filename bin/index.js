@@ -23,7 +23,9 @@ const params = program
     .option('--indent <value>', 'Indentation options [4, 2, tabs]', '4')
     .option('--postfixServices <value>', 'Service name postfix', 'Service')
     .option('--postfixModels <value>', 'Model name postfix')
+    .option('--exportClient <value>', 'Generate and write client class to disk', false)
     .option('--request <value>', 'Path to custom request file')
+    .option('--name <value>', 'Custom client class name', 'AppClient')
     .parse(process.argv)
     .opts();
 
@@ -44,6 +46,7 @@ if (OpenAPI) {
         indent: params.indent,
         postfixServices: params.postfixServices,
         postfixModels: params.postfixModels,
+        exportClient: JSON.parse(params.exportClient) === true,
         request: params.request,
     })
         .then(() => {

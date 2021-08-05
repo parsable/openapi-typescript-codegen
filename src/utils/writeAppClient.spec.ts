@@ -1,16 +1,16 @@
 import type { Client } from '../client/interfaces/Client';
 import { HttpClient } from '../HttpClient';
 import { writeFile } from './fileSystem';
-import type { Templates } from './registerHandlebarTemplates';
-import { writeClientIndex } from './writeClientIndex';
+import { Templates } from './registerHandlebarTemplates';
+import { writeAppClient } from './writeAppClient';
 
 jest.mock('./fileSystem');
 
-describe('writeClientIndex', () => {
+describe('writeAppClient', () => {
     it('should write to filesystem', async () => {
         const client: Client = {
             server: 'http://localhost:8080',
-            version: '1.0',
+            version: 'v1',
             models: [],
             services: [],
         };
@@ -28,15 +28,12 @@ describe('writeClientIndex', () => {
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
-                cancelablePromise: () => 'cancelablePromise',
-                request: () => 'request',
                 baseHttpRequest: () => 'baseHttpRequest',
-                httpRequest: () => 'httpRequest',
+                concreteHttpRequest: () => 'concreteHttpRequest',
             },
         };
 
-        await writeClientIndex(client, templates, '/', true, true, true, true, true, 'Service', '', false);
-
-        expect(writeFile).toBeCalledWith('/index.ts', 'index');
+        await writeAppClient(client, templates, '/', HttpClient.FETCH, 'AppClient');
+        expect(writeFile).toBeCalledWith('/client.ts', 'client');
     });
 });

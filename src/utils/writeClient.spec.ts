@@ -49,7 +49,8 @@ describe('writeClient', () => {
             true,
             Indent.SPACE_4,
             'Service',
-            'AppClient'
+            'AppClient',
+            false
         );
 
         expect(rmdir).toBeCalled();

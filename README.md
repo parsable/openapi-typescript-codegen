@@ -49,6 +49,7 @@ $ openapi --help
     --indent <value>          Indentation options [4, 2, tab] (default: "4")
     --postfixServices         Service name postfix (default: "Service")
     --postfixModels           Model name postfix
+    --exportClient <value>    Generate and write client class to disk (default: false)
     --request <value>         Path to custom request file
     -h, --help                display help for command
 
