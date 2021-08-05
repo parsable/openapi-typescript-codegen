@@ -2,7 +2,15 @@
 {{#if @root.exportCore}}
 
 export { ApiError } from './core/ApiError';
+{{#if @root.exportClient}}
+export type { ApiRequestOptions } from './core/ApiRequestOptions';
+export type { ApiResult } from './core/ApiResult';
+export type { OpenAPIConfig } from './core/OpenAPI';
+export { BaseHttpRequest } from './core/BaseHttpRequest';
+export { {{{httpRequestName}}} } from './core/{{{httpRequestName}}}';
+{{else}}
 export { OpenAPI } from './core/OpenAPI';
+{{/if}}
 {{/if}}
 {{#if @root.exportModels}}
 {{#if models}}
@@ -35,4 +43,8 @@ export { ${{{name}}} } from './schemas/${{{name}}}';
 export { {{{name}}} } from './services/{{{name}}}';
 {{/each}}
 {{/if}}
+{{/if}}
+
+{{#if @root.exportClient}}
+export { {{{clientName}}} } from './client';
 {{/if}}

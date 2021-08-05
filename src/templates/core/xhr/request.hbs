@@ -3,7 +3,13 @@
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
+import type { OpenAPIConfig } from './OpenAPI';
+{{#if @root.exportClient}}
+import { BaseHttpRequest } from './BaseHttpRequest';
+{{else}}
 import { OpenAPI } from './OpenAPI';
+{{/if}}
+
 
 {{>functions/isDefined}}
 
@@ -50,6 +56,37 @@ import { OpenAPI } from './OpenAPI';
 {{>functions/catchErrors}}
 
 
+{{#if @root.exportClient}}
+export class XhrHttpRequest extends BaseHttpRequest {
+    constructor(openApiConfig: OpenAPIConfig) {
+        super(openApiConfig);
+    }
+
+    /**
+    * Request using XHR client
+    * @param options The request options from the the service
+    * @returns ApiResult
+    * @throws ApiError
+    */
+    async request(options: ApiRequestOptions): Promise<ApiResult> {
+        const url = getUrl(options, this.openApiConfig);
+        const response = await sendRequest(options, this.openApiConfig, url);
+        const responseBody = getResponseBody(response);
+        const responseHeader = getResponseHeader(response, options.responseHeader);
+
+        const result: ApiResult = {
+            url,
+            ok: isSuccess(response.status),
+            status: response.status,
+            statusText: response.statusText,
+            body: responseHeader || responseBody,
+        };
+
+        catchErrors(options, result);
+        return result;
+    }
+}
+{{else}}
 /**
  * Request using XHR client
  * @param options The request options from the the service
@@ -57,8 +94,8 @@ import { OpenAPI } from './OpenAPI';
  * @throws ApiError
  */
 export async function request(options: ApiRequestOptions): Promise<ApiResult> {
-    const url = getUrl(options);
-    const response = await sendRequest(options, url);
+    const url = getUrl(options, OpenAPI);
+    const response = await sendRequest(options, OpenAPI, url);
     const responseBody = getResponseBody(response);
     const responseHeader = getResponseHeader(response, options.responseHeader);
 
@@ -73,3 +110,4 @@ export async function request(options: ApiRequestOptions): Promise<ApiResult> {
     catchErrors(options, result);
     return result;
 }
+{{/if}}

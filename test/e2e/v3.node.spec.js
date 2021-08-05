@@ -5,7 +5,6 @@ const compileWithTypescript = require('./scripts/compileWithTypescript');
 const server = require('./scripts/server');
 
 describe('v3.node', () => {
-
     beforeAll(async () => {
         await generate('v3/node', 'v3', 'node');
         compileWithTypescript('v3/node');
@@ -18,7 +17,7 @@ describe('v3.node', () => {
 
     it('requests token', async () => {
         const { OpenAPI, SimpleService } = require('./generated/v3/node/index.js');
-        const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN')
+        const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
         OpenAPI.TOKEN = tokenRequest;
         OpenAPI.USERNAME = undefined;
         OpenAPI.PASSWORD = undefined;
@@ -41,11 +40,51 @@ describe('v3.node', () => {
         const result = await ComplexService.complexTypes({
             first: {
                 second: {
-                    third: 'Hello World!'
-                }
-            }
+                    third: 'Hello World!',
+                },
+            },
         });
         expect(result).toBeDefined();
     });
+});
 
+describe('v3.node with client', () => {
+    beforeAll(async () => {
+        await generate('v3/node_client', 'v3', 'node', false, false, true);
+        compileWithTypescript('v3/node_client');
+        await server.start('v3/node_client');
+    }, 30000);
+
+    afterAll(async () => {
+        await server.stop();
+    });
+
+    it('requests token', async () => {
+        const { AppClient } = require('./generated/v3/node_client/index.js');
+        const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
+        const client = new AppClient({ TOKEN: tokenRequest, username: undefined, password: undefined });
+        const result = await client.simple.getCallWithoutParametersAndResponse();
+        expect(tokenRequest.mock.calls.length).toBe(1);
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
+    });
+
+    it('uses credentials', async () => {
+        const { AppClient } = require('./generated/v3/node_client/index.js');
+        const client = new AppClient({ TOKEN: undefined, USERNAME: 'username', PASSWORD: 'password' });
+        const result = await client.simple.getCallWithoutParametersAndResponse();
+        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+    });
+
+    it('complexService', async () => {
+        const { AppClient } = require('./generated/v3/node_client/index.js');
+        const client = new AppClient();
+        const result = await client.complex.complexTypes({
+            first: {
+                second: {
+                    third: 'Hello World!',
+                },
+            },
+        });
+        expect(result).toBeDefined();
+    });
 });

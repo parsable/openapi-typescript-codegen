@@ -5,12 +5,23 @@
 import type { {{{this}}} } from '../models/{{{this}}}';
 {{/each}}
 {{/if}}
+{{#if @root.exportClient}}
+import { BaseHttpRequest } from '../core/BaseHttpRequest';
+{{else}}
 import { request as __request } from '../core/request';
 {{#if @root.useVersion}}
 import { OpenAPI } from '../core/OpenAPI';
 {{/if}}
+{{/if}}
 
 export class {{{name}}} {
+    {{#if @root.exportClient}}
+    private httpRequest: BaseHttpRequest;
+
+    constructor(httpRequest: BaseHttpRequest) {
+        this.httpRequest = httpRequest;
+    }
+    {{/if}}
 
     {{#each operations}}
     /**
@@ -33,10 +44,10 @@ export class {{{name}}} {
     {{#each results}}
      * @returns {{{type}}} {{{description}}}
     {{/each}}
-     * @throws ApiError
-     */
-    public static async {{{name}}}({{>parameters}}): Promise<{{>result}}> {
-        const result = await __request({
+    * @throws ApiError
+    */
+    public{{#unless @root.exportClient}} static{{/unless}} async {{{name}}}({{>parameters}}): Promise<{{>result}}> {
+        const result = await {{#if @root.exportClient}}this.httpRequest.request{{else}}__request{{/if}}({
             method: '{{{method}}}',
             path: `{{{path}}}`,
             {{#if parametersCookie}}

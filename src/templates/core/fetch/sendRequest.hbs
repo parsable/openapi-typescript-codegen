@@ -1,10 +1,10 @@
-async function sendRequest(options: ApiRequestOptions, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
-        headers: await getHeaders(options),
+        headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (OpenAPI.WITH_CREDENTIALS) {
+    if (config.WITH_CREDENTIALS) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
