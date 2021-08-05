@@ -29,7 +29,12 @@ describe('writeAppClient', () => {
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
                 baseHttpRequest: () => 'baseHttpRequest',
-                concreteHttpRequest: () => 'concreteHttpRequest',
+                request: () => 'concreteHttpRequest',
+                httpRequest: {
+                    fetch: () => 'fetchRequest',
+                    node: () => 'nodeRequest',
+                    xhr: () => 'xhrRequest',
+                },
             },
         };
 
