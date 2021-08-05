@@ -1,10 +1,10 @@
-async function sendRequest(options: ApiRequestOptions, url: string): Promise<XMLHttpRequest> {
+async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<XMLHttpRequest> {
 
     const xhr = new XMLHttpRequest();
     xhr.open(options.method, url, true);
-    xhr.withCredentials = OpenAPI.WITH_CREDENTIALS;
+    xhr.withCredentials = config.WITH_CREDENTIALS ?? false;
 
-    const headers = await getHeaders(options);
+    const headers = await getHeaders(options, config);
     headers.forEach((value: string, key: string) => {
         xhr.setRequestHeader(key, value);
     });

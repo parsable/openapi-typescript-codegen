@@ -1,7 +1,7 @@
-async function sendRequest(options: ApiRequestOptions, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
-        headers: await getHeaders(options),
+        headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
     return await fetch(url, request);

@@ -1,4 +1,5 @@
 import type { Client } from '../client/interfaces/Client';
+import { HttpClient } from '../HttpClient';
 import { writeFile } from './fileSystem';
 import { Templates } from './registerHandlebarTemplates';
 import { writeClientIndex } from './writeClientIndex';
@@ -16,6 +17,7 @@ describe('writeClientIndex', () => {
 
         const templates: Templates = {
             index: () => 'index',
+            client: () => 'client',
             exports: {
                 model: () => 'model',
                 schema: () => 'schema',
@@ -26,11 +28,17 @@ describe('writeClientIndex', () => {
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
+                baseHttpRequest: () => 'baseHttpClient',
                 request: () => 'request',
+                httpRequest: {
+                    fetch: () => 'fetchRequest',
+                    node: () => 'nodeRequest',
+                    xhr: () => 'xhrRequest',
+                },
             },
         };
 
-        await writeClientIndex(client, templates, '/', true, true, true, true, true);
+        await writeClientIndex(client, templates, '/', 'AppClient', true, true, true, true, false, false, HttpClient.FETCH);
 
         expect(writeFile).toBeCalledWith('/index.ts', 'index');
     });

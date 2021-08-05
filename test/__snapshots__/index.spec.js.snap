@@ -63,17 +63,16 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
 
-type Config = {
-    BASE: string;
-    VERSION: string;
-    WITH_CREDENTIALS: boolean;
+export type OpenAPIConfig = {
+    BASE?: string;
+    VERSION?: string;
+    WITH_CREDENTIALS?: boolean;
     TOKEN?: string | Resolver<string>;
     USERNAME?: string | Resolver<string>;
     PASSWORD?: string | Resolver<string>;
     HEADERS?: Headers | Resolver<Headers>;
 }
-
-export const OpenAPI: Config = {
+export const OpenAPI: OpenAPIConfig = {
     BASE: 'http://localhost:3000/base',
     VERSION: '1.0',
     WITH_CREDENTIALS: false,
@@ -81,7 +80,8 @@ export const OpenAPI: Config = {
     USERNAME: undefined,
     PASSWORD: undefined,
     HEADERS: undefined,
-};"
+};
+"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/core/request.ts 1`] = `
@@ -91,6 +91,7 @@ exports[`v2 should generate: ./test/generated/v2/core/request.ts 1`] = `
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
+import type { OpenAPIConfig } from './OpenAPI';
 import { OpenAPI } from './OpenAPI';
 
 function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | undefined> {
@@ -129,9 +130,9 @@ function getQueryString(params: Record<string, any>): string {
     return '';
 }
 
-function getUrl(options: ApiRequestOptions): string {
+function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
     const path = options.path.replace(/[:]/g, '_');
-    const url = \`\${OpenAPI.BASE}\${path}\`;
+    const url = \`\${config.BASE}\${path}\`;
 
     if (options.query) {
         return \`\${url}\${getQueryString(options.query)}\`;
@@ -159,11 +160,11 @@ async function resolve<T>(options: ApiRequestOptions, resolver?: T | Resolver<T>
     return resolver;
 }
 
-async function getHeaders(options: ApiRequestOptions): Promise<Headers> {
-    const token = await resolve(options, OpenAPI.TOKEN);
-    const username = await resolve(options, OpenAPI.USERNAME);
-    const password = await resolve(options, OpenAPI.PASSWORD);
-    const defaultHeaders = await resolve(options, OpenAPI.HEADERS);
+async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
+    const token = await resolve(options, config.TOKEN);
+    const username = await resolve(options, config.USERNAME);
+    const password = await resolve(options, config.PASSWORD);
+    const defaultHeaders = await resolve(options, config.HEADERS);
 
     const headers = new Headers({
         Accept: 'application/json',
@@ -210,13 +211,13 @@ function getRequestBody(options: ApiRequestOptions): BodyInit | undefined {
     return undefined;
 }
 
-async function sendRequest(options: ApiRequestOptions, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
-        headers: await getHeaders(options),
+        headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (OpenAPI.WITH_CREDENTIALS) {
+    if (config.WITH_CREDENTIALS) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
@@ -278,8 +279,8 @@ function catchErrors(options: ApiRequestOptions, result: ApiResult): void {
  * @throws ApiError
  */
 export async function request(options: ApiRequestOptions): Promise<ApiResult> {
-    const url = getUrl(options);
-    const response = await sendRequest(options, url);
+    const url = getUrl(options, OpenAPI);
+    const response = await sendRequest(options, OpenAPI, url);
     const responseBody = await getResponseBody(response);
     const responseHeader = getResponseHeader(response, options.responseHeader);
 
@@ -293,7 +294,8 @@ export async function request(options: ApiRequestOptions): Promise<ApiResult> {
 
     catchErrors(options, result);
     return result;
-}"
+}
+"
 `;
 
 exports[`v2 should generate: ./test/generated/v2/index.ts 1`] = `
@@ -399,6 +401,7 @@ export { ParametersService } from './services/ParametersService';
 export { ResponseService } from './services/ResponseService';
 export { SimpleService } from './services/SimpleService';
 export { TypesService } from './services/TypesService';
+
 "
 `;
 
@@ -2416,17 +2419,16 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
 
-type Config = {
-    BASE: string;
-    VERSION: string;
-    WITH_CREDENTIALS: boolean;
+export type OpenAPIConfig = {
+    BASE?: string;
+    VERSION?: string;
+    WITH_CREDENTIALS?: boolean;
     TOKEN?: string | Resolver<string>;
     USERNAME?: string | Resolver<string>;
     PASSWORD?: string | Resolver<string>;
     HEADERS?: Headers | Resolver<Headers>;
 }
-
-export const OpenAPI: Config = {
+export const OpenAPI: OpenAPIConfig = {
     BASE: 'http://localhost:3000/base',
     VERSION: '1.0',
     WITH_CREDENTIALS: false,
@@ -2434,7 +2436,8 @@ export const OpenAPI: Config = {
     USERNAME: undefined,
     PASSWORD: undefined,
     HEADERS: undefined,
-};"
+};
+"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/core/request.ts 1`] = `
@@ -2444,6 +2447,7 @@ exports[`v3 should generate: ./test/generated/v3/core/request.ts 1`] = `
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
+import type { OpenAPIConfig } from './OpenAPI';
 import { OpenAPI } from './OpenAPI';
 
 function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | undefined> {
@@ -2482,9 +2486,9 @@ function getQueryString(params: Record<string, any>): string {
     return '';
 }
 
-function getUrl(options: ApiRequestOptions): string {
+function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
     const path = options.path.replace(/[:]/g, '_');
-    const url = \`\${OpenAPI.BASE}\${path}\`;
+    const url = \`\${config.BASE}\${path}\`;
 
     if (options.query) {
         return \`\${url}\${getQueryString(options.query)}\`;
@@ -2512,11 +2516,11 @@ async function resolve<T>(options: ApiRequestOptions, resolver?: T | Resolver<T>
     return resolver;
 }
 
-async function getHeaders(options: ApiRequestOptions): Promise<Headers> {
-    const token = await resolve(options, OpenAPI.TOKEN);
-    const username = await resolve(options, OpenAPI.USERNAME);
-    const password = await resolve(options, OpenAPI.PASSWORD);
-    const defaultHeaders = await resolve(options, OpenAPI.HEADERS);
+async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
+    const token = await resolve(options, config.TOKEN);
+    const username = await resolve(options, config.USERNAME);
+    const password = await resolve(options, config.PASSWORD);
+    const defaultHeaders = await resolve(options, config.HEADERS);
 
     const headers = new Headers({
         Accept: 'application/json',
@@ -2563,13 +2567,13 @@ function getRequestBody(options: ApiRequestOptions): BodyInit | undefined {
     return undefined;
 }
 
-async function sendRequest(options: ApiRequestOptions, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
-        headers: await getHeaders(options),
+        headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (OpenAPI.WITH_CREDENTIALS) {
+    if (config.WITH_CREDENTIALS) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
@@ -2631,8 +2635,8 @@ function catchErrors(options: ApiRequestOptions, result: ApiResult): void {
  * @throws ApiError
  */
 export async function request(options: ApiRequestOptions): Promise<ApiResult> {
-    const url = getUrl(options);
-    const response = await sendRequest(options, url);
+    const url = getUrl(options, OpenAPI);
+    const response = await sendRequest(options, OpenAPI, url);
     const responseBody = await getResponseBody(response);
     const responseHeader = getResponseHeader(response, options.responseHeader);
 
@@ -2646,7 +2650,8 @@ export async function request(options: ApiRequestOptions): Promise<ApiResult> {
 
     catchErrors(options, result);
     return result;
-}"
+}
+"
 `;
 
 exports[`v3 should generate: ./test/generated/v3/index.ts 1`] = `
@@ -2765,6 +2770,7 @@ export { ResponseService } from './services/ResponseService';
 export { SimpleService } from './services/SimpleService';
 export { TypesService } from './services/TypesService';
 export { UploadService } from './services/UploadService';
+
 "
 `;
 

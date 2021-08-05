@@ -1,20 +1,19 @@
-import type { Service } from '../client/interfaces/Service';
+import type { Client } from '../client/interfaces/Client';
 import { HttpClient } from '../HttpClient';
 import { writeFile } from './fileSystem';
 import { Templates } from './registerHandlebarTemplates';
-import { writeClientServices } from './writeClientServices';
+import { writeAppClient } from './writeAppClient';
 
 jest.mock('./fileSystem');
 
-describe('writeClientServices', () => {
+describe('writeAppClient', () => {
     it('should write to filesystem', async () => {
-        const services: Service[] = [
-            {
-                name: 'MyService',
-                operations: [],
-                imports: [],
-            },
-        ];
+        const client: Client = {
+            server: 'http://localhost:8080',
+            version: 'v1',
+            models: [],
+            services: [],
+        };
 
         const templates: Templates = {
             index: () => 'index',
@@ -30,7 +29,7 @@ describe('writeClientServices', () => {
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
                 baseHttpRequest: () => 'baseHttpRequest',
-                request: () => 'request',
+                request: () => 'concreteHttpRequest',
                 httpRequest: {
                     fetch: () => 'fetchRequest',
                     node: () => 'nodeRequest',
@@ -39,8 +38,7 @@ describe('writeClientServices', () => {
             },
         };
 
-        await writeClientServices(services, templates, '/', HttpClient.FETCH, false, false, false);
-
-        expect(writeFile).toBeCalledWith('/MyService.ts', 'service');
+        await writeAppClient(client, templates, '/', HttpClient.FETCH, 'AppClient');
+        expect(writeFile).toBeCalledWith('/client.ts', 'client');
     });
 });

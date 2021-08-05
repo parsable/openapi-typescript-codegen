@@ -4,6 +4,7 @@ import { HttpClient } from '../HttpClient';
 import templateCoreApiError from '../templates/core/ApiError.hbs';
 import templateCoreApiRequestOptions from '../templates/core/ApiRequestOptions.hbs';
 import templateCoreApiResult from '../templates/core/ApiResult.hbs';
+import templateCoreBaseHttpClient from '../templates/core/BaseHttpRequest.hbs';
 import fetchGetHeaders from '../templates/core/fetch/getHeaders.hbs';
 import fetchGetRequestBody from '../templates/core/fetch/getRequestBody.hbs';
 import fetchGetResponseBody from '../templates/core/fetch/getResponseBody.hbs';
@@ -35,6 +36,7 @@ import xhrGetResponseBody from '../templates/core/xhr/getResponseBody.hbs';
 import xhrGetResponseHeader from '../templates/core/xhr/getResponseHeader.hbs';
 import xhrRequest from '../templates/core/xhr/request.hbs';
 import xhrSendRequest from '../templates/core/xhr/sendRequest.hbs';
+import templateAppClient from '../templates/exportAppClient.hbs';
 import templateExportModel from '../templates/exportModel.hbs';
 import templateExportSchema from '../templates/exportSchema.hbs';
 import templateExportService from '../templates/exportService.hbs';
@@ -70,6 +72,7 @@ import { registerHandlebarHelpers } from './registerHandlebarHelpers';
 
 export interface Templates {
     index: Handlebars.TemplateDelegate;
+    client: Handlebars.TemplateDelegate;
     exports: {
         model: Handlebars.TemplateDelegate;
         schema: Handlebars.TemplateDelegate;
@@ -80,7 +83,13 @@ export interface Templates {
         apiError: Handlebars.TemplateDelegate;
         apiRequestOptions: Handlebars.TemplateDelegate;
         apiResult: Handlebars.TemplateDelegate;
+        baseHttpRequest: Handlebars.TemplateDelegate;
         request: Handlebars.TemplateDelegate;
+        httpRequest: {
+            fetch: Handlebars.TemplateDelegate;
+            node: Handlebars.TemplateDelegate;
+            xhr: Handlebars.TemplateDelegate;
+        };
     };
 }
 
@@ -94,6 +103,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     // Main templates (entry points for the files we write to disk)
     const templates: Templates = {
         index: Handlebars.template(templateIndex),
+        client: Handlebars.template(templateAppClient),
         exports: {
             model: Handlebars.template(templateExportModel),
             schema: Handlebars.template(templateExportSchema),
@@ -104,7 +114,13 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
             apiError: Handlebars.template(templateCoreApiError),
             apiRequestOptions: Handlebars.template(templateCoreApiRequestOptions),
             apiResult: Handlebars.template(templateCoreApiResult),
+            baseHttpRequest: Handlebars.template(templateCoreBaseHttpClient),
             request: Handlebars.template(templateCoreRequest),
+            httpRequest: {
+                fetch: Handlebars.template(fetchRequest),
+                node: Handlebars.template(nodeRequest),
+                xhr: Handlebars.template(xhrRequest),
+            },
         },
     };
 
