@@ -22,12 +22,20 @@ describe('writeClientServices', () => {
         const templates: Templates = {
             index: () => 'index',
             client: () => 'client',
-            exports: {
+            models: {
                 model: () => 'model',
-                schema: () => 'schema',
+                index: () => 'modelIndex',
+            },
+            services: {
                 service: () => 'service',
+                index: () => 'serviceIndex',
+            },
+            schemas: {
+                schema: () => 'schema',
+                index: () => 'schemaIndex',
             },
             core: {
+                index: () => 'coreIndex',
                 settings: () => 'settings',
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
@@ -51,6 +59,11 @@ describe('writeClientServices', () => {
             false
         );
 
+<<<<<<< HEAD
         expect(writeFile).toBeCalledWith('/UserService.ts', `service${EOL}`);
+=======
+        expect(writeFile).toBeCalledWith('/MyService.ts', 'service');
+        expect(writeFile).toBeCalledWith('/index.ts', 'serviceIndex');
+>>>>>>> 131d3f5 (PE-2152 - export index files)
     });
 });

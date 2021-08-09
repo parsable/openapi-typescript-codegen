@@ -4,10 +4,18 @@ import type { Service } from '../client/interfaces/Service';
 import type { HttpClient } from '../HttpClient';
 import type { Indent } from '../Indent';
 import { writeFile } from './fileSystem';
+<<<<<<< HEAD
 import { formatCode as f } from './formatCode';
 import { formatIndentation as i } from './formatIndentation';
 import { isDefined } from './isDefined';
 import type { Templates } from './registerHandlebarTemplates';
+=======
+import { format } from './format';
+import { getHttpRequestName } from './getHttpRequestName';
+import { Templates } from './registerHandlebarTemplates';
+import { sortServicesByName } from './sortServicesByName';
+
+>>>>>>> 131d3f5 (PE-2152 - export index files)
 const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
 
 /**
@@ -36,8 +44,14 @@ export const writeClientServices = async (
     clientName?: string
 ): Promise<void> => {
     for (const service of services) {
+<<<<<<< HEAD
         const file = resolve(outputPath, `${service.name}${postfix}.ts`);
         const templateResult = templates.exports.service({
+=======
+        const file = resolve(outputPath, `${service.name}.ts`);
+        const useVersion = service.operations.some(operation => operation.path.includes(VERSION_TEMPLATE_STRING));
+        const templateResult = templates.services.service({
+>>>>>>> 131d3f5 (PE-2152 - export index files)
             ...service,
             httpClient,
             useUnionTypes,
@@ -47,4 +61,10 @@ export const writeClientServices = async (
         });
         await writeFile(file, i(f(templateResult), indent));
     }
+<<<<<<< HEAD
 };
+=======
+
+    await writeFile(resolve(outputPath, 'index.ts'), templates.services.index({ services: sortServicesByName(services) }));
+}
+>>>>>>> 131d3f5 (PE-2152 - export index files)

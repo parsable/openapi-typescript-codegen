@@ -12,15 +12,21 @@ import type { Observable } from 'rxjs';
 
 {{/equals}}
 {{#if imports}}
+import type {
 {{#each imports}}
-import type { {{{this}}} } from '../models/{{{this}}}';
+ {{{this}}},
 {{/each}}
+<<<<<<< HEAD:src/templates/exportService.hbs
 
+=======
+} from '../models';
+>>>>>>> 131d3f5 (PE-2152 - export index files):src/templates/services/exportService.hbs
 {{/if}}
 {{#notEquals @root.httpClient 'angular'}}
 import type { CancelablePromise } from '../core/CancelablePromise';
 {{/notEquals}}
 {{#if @root.exportClient}}
+<<<<<<< HEAD:src/templates/exportService.hbs
 {{#equals @root.httpClient 'angular'}}
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
 {{else}}
@@ -29,7 +35,16 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 {{else}}
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+=======
+import { BaseHttpRequest } from '../core';
+{{else}}
+import {
+    request as __request,
+{{#if @root.useVersion}}
+    OpenAPI,
+>>>>>>> 131d3f5 (PE-2152 - export index files):src/templates/services/exportService.hbs
 {{/if}}
+} from '../core';
 {{/if}}
 
 {{#equals @root.httpClient 'angular'}}

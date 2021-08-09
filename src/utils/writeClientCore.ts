@@ -38,8 +38,10 @@ export const writeClientCore = async (
         server: client.server,
         version: client.version,
         exportClient,
+        httpRequestName: getHttpRequestName(httpClient),
     };
 
+<<<<<<< HEAD
     await writeFile(resolve(outputPath, 'OpenAPI.ts'), i(templates.core.settings(context), indent));
     await writeFile(resolve(outputPath, 'ApiError.ts'), i(templates.core.apiError(context), indent));
     await writeFile(resolve(outputPath, 'ApiRequestOptions.ts'), i(templates.core.apiRequestOptions(context), indent));
@@ -50,6 +52,17 @@ export const writeClientCore = async (
     if (isDefined(clientName) || exportClient) {
         await writeFile(resolve(outputPath, 'BaseHttpRequest.ts'), i(templates.core.baseHttpRequest(context), indent));
         await writeFile(resolve(outputPath, `${httpRequest}.ts`), i(templates.core.httpRequest(context), indent));
+=======
+    await writeFile(resolve(outputPath, 'OpenAPI.ts'), templates.core.settings(context));
+    await writeFile(resolve(outputPath, 'ApiError.ts'), templates.core.apiError({}));
+    await writeFile(resolve(outputPath, 'ApiRequestOptions.ts'), templates.core.apiRequestOptions({}));
+    await writeFile(resolve(outputPath, 'ApiResult.ts'), templates.core.apiResult({}));
+    if (exportClient) {
+        await writeFile(resolve(outputPath, 'BaseHttpRequest.ts'), templates.core.baseHttpRequest({}));
+        await writeFile(resolve(outputPath, `${getHttpRequestName(httpClient)}.ts`), templates.core.httpRequest[httpClient](context));
+    } else {
+        await writeFile(resolve(outputPath, `request.ts`), templates.core.request(context));
+>>>>>>> 131d3f5 (PE-2152 - export index files)
     }
 
     if (request) {
@@ -60,4 +73,10 @@ export const writeClientCore = async (
         }
         await copyFile(requestFile, resolve(outputPath, 'request.ts'));
     }
+<<<<<<< HEAD
 };
+=======
+
+    await writeFile(resolve(outputPath, 'index.ts'), templates.core.index(context));
+}
+>>>>>>> 131d3f5 (PE-2152 - export index files)

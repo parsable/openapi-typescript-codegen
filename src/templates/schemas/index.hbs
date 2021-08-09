@@ -1,0 +1,5 @@
+{{>header}}
+
+{{#each models}}
+export { ${{{name}}} } from './${{{name}}}';
+{{/each}}
