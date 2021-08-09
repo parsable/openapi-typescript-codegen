@@ -22,6 +22,7 @@ import functionIsString from '../templates/core/functions/isString.hbs';
 import functionIsStringWithValue from '../templates/core/functions/isStringWithValue.hbs';
 import functionIsSuccess from '../templates/core/functions/isSuccess.hbs';
 import functionResolve from '../templates/core/functions/resolve.hbs';
+import templateCoreIndex from '../templates/core/index.hbs';
 import nodeGetHeaders from '../templates/core/node/getHeaders.hbs';
 import nodeGetRequestBody from '../templates/core/node/getRequestBody.hbs';
 import nodeGetResponseBody from '../templates/core/node/getResponseBody.hbs';
@@ -37,10 +38,9 @@ import xhrGetResponseHeader from '../templates/core/xhr/getResponseHeader.hbs';
 import xhrRequest from '../templates/core/xhr/request.hbs';
 import xhrSendRequest from '../templates/core/xhr/sendRequest.hbs';
 import templateAppClient from '../templates/exportAppClient.hbs';
-import templateExportModel from '../templates/exportModel.hbs';
-import templateExportSchema from '../templates/exportSchema.hbs';
-import templateExportService from '../templates/exportService.hbs';
 import templateIndex from '../templates/index.hbs';
+import templateExportModel from '../templates/models/exportModel.hbs';
+import templateExportModelIndex from '../templates/models/index.hbs';
 import partialBase from '../templates/partials/base.hbs';
 import partialExportComposition from '../templates/partials/exportComposition.hbs';
 import partialExportEnum from '../templates/partials/exportEnum.hbs';
@@ -68,17 +68,29 @@ import partialTypeInterface from '../templates/partials/typeInterface.hbs';
 import partialTypeIntersection from '../templates/partials/typeIntersection.hbs';
 import partialTypeReference from '../templates/partials/typeReference.hbs';
 import partialTypeUnion from '../templates/partials/typeUnion.hbs';
+import templateExportSchema from '../templates/schemas/exportSchema.hbs';
+import templateExportSchemaIndex from '../templates/schemas/index.hbs';
+import templateExportService from '../templates/services/exportService.hbs';
+import templateExportServiceIndex from '../templates/services/index.hbs';
 import { registerHandlebarHelpers } from './registerHandlebarHelpers';
 
 export interface Templates {
     index: Handlebars.TemplateDelegate;
     client: Handlebars.TemplateDelegate;
-    exports: {
+    models: {
         model: Handlebars.TemplateDelegate;
-        schema: Handlebars.TemplateDelegate;
+        index: Handlebars.TemplateDelegate;
+    };
+    services: {
         service: Handlebars.TemplateDelegate;
+        index: Handlebars.TemplateDelegate;
+    };
+    schemas: {
+        schema: Handlebars.TemplateDelegate;
+        index: Handlebars.TemplateDelegate;
     };
     core: {
+        index: Handlebars.TemplateDelegate;
         settings: Handlebars.TemplateDelegate;
         apiError: Handlebars.TemplateDelegate;
         apiRequestOptions: Handlebars.TemplateDelegate;
@@ -104,12 +116,20 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     const templates: Templates = {
         index: Handlebars.template(templateIndex),
         client: Handlebars.template(templateAppClient),
-        exports: {
+        models: {
             model: Handlebars.template(templateExportModel),
-            schema: Handlebars.template(templateExportSchema),
+            index: Handlebars.template(templateExportModelIndex),
+        },
+        services: {
             service: Handlebars.template(templateExportService),
+            index: Handlebars.template(templateExportServiceIndex),
+        },
+        schemas: {
+            schema: Handlebars.template(templateExportSchema),
+            index: Handlebars.template(templateExportSchemaIndex),
         },
         core: {
+            index: Handlebars.template(templateCoreIndex),
             settings: Handlebars.template(templateCoreSettings),
             apiError: Handlebars.template(templateCoreApiError),
             apiRequestOptions: Handlebars.template(templateCoreApiRequestOptions),

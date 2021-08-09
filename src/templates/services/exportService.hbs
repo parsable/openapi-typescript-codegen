@@ -1,17 +1,21 @@
 {{>header}}
 
 {{#if imports}}
+import type {
 {{#each imports}}
-import type { {{{this}}} } from '../models/{{{this}}}';
+ {{{this}}},
 {{/each}}
+} from '../models';
 {{/if}}
 {{#if @root.exportClient}}
-import { BaseHttpRequest } from '../core/BaseHttpRequest';
+import { BaseHttpRequest } from '../core';
 {{else}}
-import { request as __request } from '../core/request';
+import {
+    request as __request,
 {{#if @root.useVersion}}
-import { OpenAPI } from '../core/OpenAPI';
+    OpenAPI,
 {{/if}}
+} from '../core';
 {{/if}}
 
 export class {{{name}}} {

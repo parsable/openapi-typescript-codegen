@@ -1,12 +1,13 @@
 {{>header}}
 
-import { BaseHttpRequest } from './core/BaseHttpRequest';
-import type { OpenAPIConfig } from './core/OpenAPI';
-import { {{{httpClientRequest}}} } from './core/{{{httpClientRequest}}}';
+import { BaseHttpRequest, {{{httpClientRequest}}} } from './core';
+import type { OpenAPIConfig } from './core';
 {{#if services}}
+import {
 {{#each services}}
-import { {{{name}}} } from './services/{{{name}}}';
+    {{{name}}},
 {{/each}}
+} from './services';
 {{/if}}
 
 export class {{{clientName}}} {

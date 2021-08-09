@@ -6,6 +6,7 @@ import { writeFile } from './fileSystem';
 import { format } from './format';
 import { getHttpRequestName } from './getHttpRequestName';
 import { Templates } from './registerHandlebarTemplates';
+import { sortServicesByName } from './sortServicesByName';
 
 const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
 
@@ -31,7 +32,7 @@ export async function writeClientServices(
     for (const service of services) {
         const file = resolve(outputPath, `${service.name}.ts`);
         const useVersion = service.operations.some(operation => operation.path.includes(VERSION_TEMPLATE_STRING));
-        const templateResult = templates.exports.service({
+        const templateResult = templates.services.service({
             ...service,
             httpClient,
             useUnionTypes,
@@ -42,4 +43,6 @@ export async function writeClientServices(
         });
         await writeFile(file, format(templateResult));
     }
+
+    await writeFile(resolve(outputPath, 'index.ts'), templates.services.index({ services: sortServicesByName(services) }));
 }
