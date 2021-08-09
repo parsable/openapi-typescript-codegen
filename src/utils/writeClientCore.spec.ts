@@ -17,12 +17,20 @@ describe('writeClientCore', () => {
     const templates: Templates = {
         index: () => 'index',
         client: () => 'client',
-        exports: {
+        models: {
             model: () => 'model',
-            schema: () => 'schema',
+            index: () => 'modelIndex',
+        },
+        services: {
             service: () => 'service',
+            index: () => 'serviceIndex',
+        },
+        schemas: {
+            schema: () => 'schema',
+            index: () => 'schemaIndex',
         },
         core: {
+            index: () => 'coreIndex',
             settings: () => 'settings',
             apiError: () => 'apiError',
             apiRequestOptions: () => 'apiRequestOptions',
@@ -45,6 +53,7 @@ describe('writeClientCore', () => {
         expect(writeFile).toBeCalledWith('/ApiRequestOptions.ts', 'apiRequestOptions');
         expect(writeFile).toBeCalledWith('/ApiResult.ts', 'apiResult');
         expect(writeFile).toBeCalledWith('/request.ts', 'request');
+        expect(writeFile).toBeCalledWith('/index.ts', 'coreIndex');
     });
 
     it('should write to filesystem when exportClient true', async () => {
@@ -56,7 +65,6 @@ describe('writeClientCore', () => {
         expect(writeFile).toBeCalledWith('/ApiResult.ts', 'apiResult');
         expect(writeFile).toBeCalledWith('/BaseHttpRequest.ts', 'baseHttpRequest');
         expect(writeFile).toBeCalledWith('/FetchHttpRequest.ts', 'fetchRequest');
-        expect(writeFile).toBeCalledWith('/NodeHttpRequest.ts', 'nodeRequest');
-        expect(writeFile).toBeCalledWith('/XhrHttpRequest.ts', 'xhrRequest');
+        expect(writeFile).toBeCalledWith('/index.ts', 'coreIndex');
     });
 });

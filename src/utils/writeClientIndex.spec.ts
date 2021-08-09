@@ -18,17 +18,25 @@ describe('writeClientIndex', () => {
         const templates: Templates = {
             index: () => 'index',
             client: () => 'client',
-            exports: {
+            models: {
                 model: () => 'model',
-                schema: () => 'schema',
+                index: () => 'modelIndex',
+            },
+            services: {
                 service: () => 'service',
+                index: () => 'serviceIndex',
+            },
+            schemas: {
+                schema: () => 'schema',
+                index: () => 'schemaIndex',
             },
             core: {
+                index: () => 'coreIndex',
                 settings: () => 'settings',
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
-                baseHttpRequest: () => 'baseHttpClient',
+                baseHttpRequest: () => 'baseHttpRequest',
                 request: () => 'request',
                 httpRequest: {
                     fetch: () => 'fetchRequest',

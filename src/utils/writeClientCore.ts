@@ -21,6 +21,7 @@ export async function writeClientCore(client: Client, templates: Templates, outp
         server: client.server,
         version: client.version,
         exportClient,
+        httpRequestName: getHttpRequestName(httpClient),
     };
 
     await writeFile(resolve(outputPath, 'OpenAPI.ts'), templates.core.settings(context));
@@ -29,9 +30,7 @@ export async function writeClientCore(client: Client, templates: Templates, outp
     await writeFile(resolve(outputPath, 'ApiResult.ts'), templates.core.apiResult({}));
     if (exportClient) {
         await writeFile(resolve(outputPath, 'BaseHttpRequest.ts'), templates.core.baseHttpRequest({}));
-        for (const client of Object.values(HttpClient)) {
-            await writeFile(resolve(outputPath, `${getHttpRequestName(client)}.ts`), templates.core.httpRequest[client](context));
-        }
+        await writeFile(resolve(outputPath, `${getHttpRequestName(httpClient)}.ts`), templates.core.httpRequest[httpClient](context));
     } else {
         await writeFile(resolve(outputPath, `request.ts`), templates.core.request(context));
     }
@@ -44,4 +43,6 @@ export async function writeClientCore(client: Client, templates: Templates, outp
         }
         await copyFile(requestFile, resolve(outputPath, 'request.ts'));
     }
+
+    await writeFile(resolve(outputPath, 'index.ts'), templates.core.index(context));
 }
