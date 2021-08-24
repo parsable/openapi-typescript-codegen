@@ -6,11 +6,22 @@ import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
+<<<<<<< HEAD
+=======
+{{#if @root.exportClient}}
+import type { BaseHttpRequest } from './BaseHttpRequest';
+{{else}}
+import { OpenAPI } from './OpenAPI';
+{{/if}}
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 {{>functions/isDefined}}
 
 
 {{>functions/isString}}
+
+
+{{>functions/deepAssign}}
 
 
 {{>functions/isStringWithValue}}
@@ -56,20 +67,19 @@ import type { OpenAPIConfig } from './OpenAPI';
 
 
 {{#if @root.exportClient}}
-export class FetchHttpRequest extends BaseHttpRequest {
-    constructor(openApiConfig: OpenAPIConfig) {
-        super(openApiConfig);
-    }
-
+export class FetchHttpRequest implements BaseHttpRequest {
     /**
     * Request using fetch client
     * @param options The request options from the the service
+    * @param config The OpenAPI configuration
+    * @param [mergeConfig] Additional optional OpenAPI configuration that will be merged with the first one
     * @returns ApiResult
     * @throws ApiError
     */
-    async request(options: ApiRequestOptions): Promise<ApiResult> {
-        const url = getUrl(options, this.openApiConfig);
-        const response = await sendRequest(options, this.openApiConfig, url);
+    async request(options: ApiRequestOptions, config: OpenAPIConfig, mergeConfig?: OpenAPIConfig): Promise<ApiResult> {
+        const conf = mergeConfig ? deepAssign(config, mergeConfig) : config;
+        const url = getUrl(options, conf);
+        const response = await sendRequest(options, conf, url);
         const responseBody = await getResponseBody(response);
         const responseHeader = getResponseHeader(response, options.responseHeader);
 

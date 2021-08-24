@@ -12,6 +12,7 @@ import type { CancelablePromise } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
 {{/equals}}
 
+<<<<<<< HEAD
 export abstract class BaseHttpRequest {
 
 	{{#equals @root.httpClient 'angular'}}
@@ -28,4 +29,12 @@ export abstract class BaseHttpRequest {
 	{{else}}
 	public abstract request<T>(options: ApiRequestOptions): CancelablePromise<T>;
 	{{/equals}}
+=======
+export interface BaseHttpRequest {
+    request(
+        options: ApiRequestOptions,
+        config: OpenAPIConfig,
+        mergeConfig?: OpenAPIConfig
+    ): Promise<ApiResult>;
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 }

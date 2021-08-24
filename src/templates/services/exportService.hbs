@@ -26,6 +26,7 @@ import type {
 import type { CancelablePromise } from '../core/CancelablePromise';
 {{/notEquals}}
 {{#if @root.exportClient}}
+<<<<<<< HEAD
 <<<<<<< HEAD:src/templates/exportService.hbs
 {{#equals @root.httpClient 'angular'}}
 import { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -37,7 +38,11 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 =======
 import { BaseHttpRequest } from '../core';
+=======
+import type { ApiResult, BaseHttpRequest, OpenAPIConfig } from '../core';
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 {{else}}
+import type { ApiResult } from '../core';
 import {
     request as __request,
 {{#if @root.useVersion}}
@@ -47,6 +52,7 @@ import {
 } from '../core';
 {{/if}}
 
+<<<<<<< HEAD
 {{#equals @root.httpClient 'angular'}}
 @Injectable({
   providedIn: 'root',
@@ -62,6 +68,93 @@ export class {{{name}}}{{{@root.postfix}}} {
 	constructor(public readonly http: HttpClient) {}
 	{{/equals}}
 	{{/if}}
+=======
+export class {{{name}}} {
+    {{#if @root.exportClient}}
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly openApiConfig: OpenAPIConfig;
+
+    constructor(httpRequest: BaseHttpRequest, openApiConfig: OpenAPIConfig) {
+        this.httpRequest = httpRequest;
+        this.openApiConfig = openApiConfig;
+    }
+    {{/if}}
+
+    {{#each operations}}
+    /**
+    {{#if deprecated}}
+     * @deprecated
+    {{/if}}
+    {{#if summary}}
+     * {{{summary}}}
+    {{/if}}
+    {{#if description}}
+     * {{{description}}}
+    {{/if}}
+    {{#unless @root.useOptions}}
+    {{#if parameters}}
+    {{#each parameters}}
+     * @param {{{name}}} {{{description}}}
+    {{/each}}
+    {{/if}}
+    {{/unless}}
+    {{#if @root.exportClient}}* @param [config] the optional OpenAPI config to use{{/if}}
+    {{#each results}}
+     * @returns {{{type}}} {{{description}}}
+    {{/each}}
+    * @throws ApiError
+    */
+    public{{#unless @root.exportClient}} static{{/unless}} async {{{name}}}({{>parameters}}): Promise<ApiResult<{{>result}}>> {
+        return {{#if @root.exportClient}}this.httpRequest.request{{else}}__request{{/if}}({
+            method: '{{{method}}}',
+            path: `{{{path}}}`,
+            {{#if parametersCookie}}
+            cookies: {
+                {{#each parametersCookie}}
+                '{{{prop}}}': {{{name}}},
+                {{/each}}
+            },
+            {{/if}}
+            {{#if parametersHeader}}
+            headers: {
+                {{#each parametersHeader}}
+                '{{{prop}}}': {{{name}}},
+                {{/each}}
+            },
+            {{/if}}
+            {{#if parametersQuery}}
+            query: {
+                {{#each parametersQuery}}
+                '{{{prop}}}': {{{name}}},
+                {{/each}}
+            },
+            {{/if}}
+            {{#if parametersForm}}
+            formData: {
+                {{#each parametersForm}}
+                '{{{prop}}}': {{{name}}},
+                {{/each}}
+            },
+            {{/if}}
+            {{#if parametersBody}}
+            body: {{{parametersBody.name}}},
+            {{#if parametersBody.mediaType}}
+            mediaType: '{{{parametersBody.mediaType}}}',
+            {{/if}}
+            {{/if}}
+            {{#if responseHeader}}
+            responseHeader: '{{{responseHeader}}}',
+            {{/if}}
+            {{#if errors}}
+            errors: {
+                {{#each errors}}
+                {{{code}}}: `{{{description}}}`,
+                {{/each}}
+            },
+            {{/if}}
+        }{{#if @root.exportClient}}, this.openApiConfig, config{{/if}});
+    }
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 	{{#each operations}}
 	/**

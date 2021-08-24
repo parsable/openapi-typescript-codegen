@@ -1,5 +1,6 @@
 {{>header}}
 
+<<<<<<< HEAD
 export type ApiResult = {
 	readonly url: string;
 	readonly ok: boolean;
@@ -7,3 +8,12 @@ export type ApiResult = {
 	readonly statusText: string;
 	readonly body: any;
 };
+=======
+export type ApiResult<T = any> = {
+    readonly url: string;
+    readonly ok: boolean;
+    readonly status: number;
+    readonly statusText: string;
+    readonly body: T;
+}
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)

@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
 	const encoder = config.ENCODE_PATH || encodeURI;
+=======
+function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
+    const path = options.path.replace(/[:]/g, '_');
+    const url = `${config.baseUrl}${path}`;
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 	const path = options.url
 		.replace('{api-version}', config.VERSION)

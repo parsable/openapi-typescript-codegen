@@ -15,8 +15,12 @@ import { getHttpRequestName } from './getHttpRequestName';
 import { Templates } from './registerHandlebarTemplates';
 import { sortServicesByName } from './sortServicesByName';
 
+<<<<<<< HEAD
 >>>>>>> 131d3f5 (PE-2152 - export index files)
 const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
+=======
+const VERSION_TEMPLATE_STRING = 'OpenAPI.version';
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 /**
  * Generate Services using the Handlebar template and write to disk.

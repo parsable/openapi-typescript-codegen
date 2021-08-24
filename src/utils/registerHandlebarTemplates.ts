@@ -25,8 +25,13 @@ import fetchGetResponseBody from '../templates/core/fetch/getResponseBody.hbs';
 import fetchGetResponseHeader from '../templates/core/fetch/getResponseHeader.hbs';
 import fetchRequest from '../templates/core/fetch/request.hbs';
 import fetchSendRequest from '../templates/core/fetch/sendRequest.hbs';
+<<<<<<< HEAD
 import functionBase64 from '../templates/core/functions/base64.hbs';
 import functionCatchErrorCodes from '../templates/core/functions/catchErrorCodes.hbs';
+=======
+import functionCatchErrors from '../templates/core/functions/catchErrors.hbs';
+import functionDeepAssign from '../templates/core/functions/deepAssign.hbs';
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 import functionGetFormData from '../templates/core/functions/getFormData.hbs';
 import functionGetQueryString from '../templates/core/functions/getQueryString.hbs';
 import functionGetUrl from '../templates/core/functions/getUrl.hbs';
@@ -206,7 +211,11 @@ export const registerHandlebarTemplates = (root: {
     Handlebars.registerPartial('functions/isString', Handlebars.template(functionIsString));
     Handlebars.registerPartial('functions/isStringWithValue', Handlebars.template(functionIsStringWithValue));
     Handlebars.registerPartial('functions/isSuccess', Handlebars.template(functionIsSuccess));
+<<<<<<< HEAD
     Handlebars.registerPartial('functions/base64', Handlebars.template(functionBase64));
+=======
+    Handlebars.registerPartial('functions/deepAssign', Handlebars.template(functionDeepAssign));
+>>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
     Handlebars.registerPartial('functions/resolve', Handlebars.template(functionResolve));
 
     // Specific files for the fetch client implementation

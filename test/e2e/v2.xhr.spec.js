@@ -6,12 +6,12 @@ const compileWithTypescript = require('./scripts/compileWithTypescript');
 const server = require('./scripts/server');
 const browser = require('./scripts/browser');
 
-describe('v3.xhr', () => {
+describe('v2.xhr', () => {
     beforeAll(async () => {
-        await generate('v3/xhr', 'v3', 'xhr');
-        await copy('v3/xhr');
-        compileWithTypescript('v3/xhr');
-        await server.start('v3/xhr');
+        await generate('v2/xhr', 'v2', 'xhr');
+        await copy('v2/xhr');
+        compileWithTypescript('v2/xhr');
+        await server.start('v2/xhr');
         await browser.start();
     }, 30000);
 
@@ -25,22 +25,9 @@ describe('v3.xhr', () => {
         const result = await browser.evaluate(async () => {
             const { OpenAPI, SimpleService } = window.api;
             OpenAPI.token = window.tokenRequest;
-            OpenAPI.username = undefined;
-            OpenAPI.password = undefined;
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
         expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
-    });
-
-    it('uses credentials', async () => {
-        const result = await browser.evaluate(async () => {
-            const { OpenAPI, SimpleService } = window.api;
-            OpenAPI.token = undefined;
-            OpenAPI.username = 'username';
-            OpenAPI.password = 'password';
-            return await SimpleService.getCallWithoutParametersAndResponse();
-        });
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -54,16 +41,16 @@ describe('v3.xhr', () => {
                 },
             });
         });
-        expect(result).toBeDefined();
+        expect(result.body).toBeDefined();
     });
 });
 
-describe('v3.xhr with client', () => {
+describe('v2.xhr with client', () => {
     beforeAll(async () => {
-        await generate('v3/xhr_client', 'v3', 'xhr', false, false, true);
-        await copy('v3/xhr_client');
-        compileWithTypescript('v3/xhr_client');
-        await server.start('v3/xhr_client');
+        await generate('v2/xhr_client', 'v2', 'xhr', false, false, true);
+        await copy('v2/xhr_client');
+        compileWithTypescript('v2/xhr_client');
+        await server.start('v2/xhr_client');
         await browser.start();
     }, 30000);
 
@@ -76,25 +63,16 @@ describe('v3.xhr with client', () => {
         await browser.exposeFunction('tokenRequest', jest.fn().mockResolvedValue('MY_TOKEN'));
         const result = await browser.evaluate(async () => {
             const { AppClient } = window.api;
-            const client = new AppClient({ token: window.tokenRequest, username: undefined, password: undefined });
+            const client = new AppClient({ token: window.tokenRequest });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
         expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
-    it('uses credentials', async () => {
-        const result = await browser.evaluate(async () => {
-            const { AppClient } = window.api;
-            const client = new AppClient({ token: undefined, username: 'username', password: 'password' });
-            return await client.simple.getCallWithoutParametersAndResponse();
-        });
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
-    });
-
     it('complexService', async () => {
         const result = await browser.evaluate(async () => {
             const { AppClient } = window.api;
-            const client = new AppClient({});
+            const client = new AppClient();
             return await client.complex.complexTypes({
                 first: {
                     second: {
