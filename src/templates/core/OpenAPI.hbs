@@ -6,22 +6,22 @@ type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
 
 export type OpenAPIConfig = {
-    BASE?: string;
-    VERSION?: string;
-    WITH_CREDENTIALS?: boolean;
-    TOKEN?: string | Resolver<string>;
-    USERNAME?: string | Resolver<string>;
-    PASSWORD?: string | Resolver<string>;
-    HEADERS?: Headers | Resolver<Headers>;
+    baseUrl?: string;
+    version?: string;
+    withCredentials?: boolean;
+    token?: string | Resolver<string>;
+    username?: string | Resolver<string>;
+    password?: string | Resolver<string>;
+    headers?: Headers | Resolver<Headers>;
 }
 {{#unless @root.exportClient}}
 export const OpenAPI: OpenAPIConfig = {
-    BASE: '{{{server}}}',
-    VERSION: '{{{version}}}',
-    WITH_CREDENTIALS: false,
-    TOKEN: undefined,
-    USERNAME: undefined,
-    PASSWORD: undefined,
-    HEADERS: undefined,
+    baseUrl: '{{{server}}}',
+    version: '{{{version}}}',
+    withCredentials: false,
+    token: undefined,
+    username: undefined,
+    password: undefined,
+    headers: undefined,
 };
 {{/unless}}

@@ -8,7 +8,7 @@ import { getHttpRequestName } from './getHttpRequestName';
 import { Templates } from './registerHandlebarTemplates';
 import { sortServicesByName } from './sortServicesByName';
 
-const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
+const VERSION_TEMPLATE_STRING = 'OpenAPI.version';
 
 /**
  * Generate Services using the Handlebar template and write to disk.

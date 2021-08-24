@@ -12,6 +12,7 @@ import fetchGetResponseHeader from '../templates/core/fetch/getResponseHeader.hb
 import fetchRequest from '../templates/core/fetch/request.hbs';
 import fetchSendRequest from '../templates/core/fetch/sendRequest.hbs';
 import functionCatchErrors from '../templates/core/functions/catchErrors.hbs';
+import functionDeepAssign from '../templates/core/functions/deepAssign.hbs';
 import functionGetFormData from '../templates/core/functions/getFormData.hbs';
 import functionGetQueryString from '../templates/core/functions/getQueryString.hbs';
 import functionGetUrl from '../templates/core/functions/getUrl.hbs';
@@ -184,6 +185,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     Handlebars.registerPartial('functions/isString', Handlebars.template(functionIsString));
     Handlebars.registerPartial('functions/isStringWithValue', Handlebars.template(functionIsStringWithValue));
     Handlebars.registerPartial('functions/isSuccess', Handlebars.template(functionIsSuccess));
+    Handlebars.registerPartial('functions/deepAssign', Handlebars.template(functionDeepAssign));
     Handlebars.registerPartial('functions/resolve', Handlebars.template(functionResolve));
 
     // Specific files for the fetch client implementation

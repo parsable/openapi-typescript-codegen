@@ -18,21 +18,21 @@ describe('v3.node', () => {
     it('requests token', async () => {
         const { OpenAPI, SimpleService } = require('./generated/v3/node/index.js');
         const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
-        OpenAPI.TOKEN = tokenRequest;
-        OpenAPI.USERNAME = undefined;
-        OpenAPI.PASSWORD = undefined;
+        OpenAPI.token = tokenRequest;
+        OpenAPI.username = undefined;
+        OpenAPI.password = undefined;
         const result = await SimpleService.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
         const { OpenAPI, SimpleService } = require('./generated/v3/node/index.js');
-        OpenAPI.TOKEN = undefined;
-        OpenAPI.USERNAME = 'username';
-        OpenAPI.PASSWORD = 'password';
+        OpenAPI.token = undefined;
+        OpenAPI.username = 'username';
+        OpenAPI.password = 'password';
         const result = await SimpleService.getCallWithoutParametersAndResponse();
-        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -44,7 +44,7 @@ describe('v3.node', () => {
                 },
             },
         });
-        expect(result).toBeDefined();
+        expect(result.body).toBeDefined();
     });
 });
 
@@ -62,17 +62,17 @@ describe('v3.node with client', () => {
     it('requests token', async () => {
         const { AppClient } = require('./generated/v3/node_client/index.js');
         const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
-        const client = new AppClient({ TOKEN: tokenRequest, username: undefined, password: undefined });
+        const client = new AppClient({ token: tokenRequest, username: undefined, password: undefined });
         const result = await client.simple.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
         const { AppClient } = require('./generated/v3/node_client/index.js');
-        const client = new AppClient({ TOKEN: undefined, USERNAME: 'username', PASSWORD: 'password' });
+        const client = new AppClient({ token: undefined, username: 'username', password: 'password' });
         const result = await client.simple.getCallWithoutParametersAndResponse();
-        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -85,6 +85,6 @@ describe('v3.node with client', () => {
                 },
             },
         });
-        expect(result).toBeDefined();
+        expect(result.body).toBeDefined();
     });
 });

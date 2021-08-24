@@ -2,7 +2,7 @@ async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, ur
 
     const xhr = new XMLHttpRequest();
     xhr.open(options.method, url, true);
-    xhr.withCredentials = config.WITH_CREDENTIALS ?? false;
+    xhr.withCredentials = config.withCredentials ?? false;
 
     const headers = await getHeaders(options, config);
     headers.forEach((value: string, key: string) => {

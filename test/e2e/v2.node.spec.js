@@ -18,10 +18,10 @@ describe('v2.node', () => {
     it('requests token', async () => {
         const { OpenAPI, SimpleService } = require('./generated/v2/node/index.js');
         const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
-        OpenAPI.TOKEN = tokenRequest;
+        OpenAPI.token = tokenRequest;
         const result = await SimpleService.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -33,7 +33,7 @@ describe('v2.node', () => {
                 },
             },
         });
-        expect(result).toBeDefined();
+        expect(result.body).toBeDefined();
     });
 });
 
@@ -51,10 +51,10 @@ describe('v2.node with client', () => {
     it('requests token', async () => {
         const tokenRequest = jest.fn().mockResolvedValue('MY_TOKEN');
         const { AppClient } = require('./generated/v2/node_client/index.js');
-        const client = new AppClient({ TOKEN: tokenRequest });
+        const client = new AppClient({ token: tokenRequest });
         const result = await client.simple.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -67,6 +67,6 @@ describe('v2.node with client', () => {
                 },
             },
         });
-        expect(result).toBeDefined();
+        expect(result.body).toBeDefined();
     });
 });

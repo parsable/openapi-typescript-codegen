@@ -8,8 +8,9 @@ import type {
 } from '../models';
 {{/if}}
 {{#if @root.exportClient}}
-import { BaseHttpRequest } from '../core';
+import type { ApiResult, BaseHttpRequest, OpenAPIConfig } from '../core';
 {{else}}
+import type { ApiResult } from '../core';
 import {
     request as __request,
 {{#if @root.useVersion}}
@@ -20,10 +21,12 @@ import {
 
 export class {{{name}}} {
     {{#if @root.exportClient}}
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly openApiConfig: OpenAPIConfig;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, openApiConfig: OpenAPIConfig) {
         this.httpRequest = httpRequest;
+        this.openApiConfig = openApiConfig;
     }
     {{/if}}
 
@@ -45,13 +48,14 @@ export class {{{name}}} {
     {{/each}}
     {{/if}}
     {{/unless}}
+    {{#if @root.exportClient}}* @param [config] the optional OpenAPI config to use{{/if}}
     {{#each results}}
      * @returns {{{type}}} {{{description}}}
     {{/each}}
     * @throws ApiError
     */
-    public{{#unless @root.exportClient}} static{{/unless}} async {{{name}}}({{>parameters}}): Promise<{{>result}}> {
-        const result = await {{#if @root.exportClient}}this.httpRequest.request{{else}}__request{{/if}}({
+    public{{#unless @root.exportClient}} static{{/unless}} async {{{name}}}({{>parameters}}): Promise<ApiResult<{{>result}}>> {
+        return {{#if @root.exportClient}}this.httpRequest.request{{else}}__request{{/if}}({
             method: '{{{method}}}',
             path: `{{{path}}}`,
             {{#if parametersCookie}}
@@ -98,8 +102,7 @@ export class {{{name}}} {
                 {{/each}}
             },
             {{/if}}
-        });
-        return result.body;
+        }{{#if @root.exportClient}}, this.openApiConfig, config{{/if}});
     }
 
     {{/each}}

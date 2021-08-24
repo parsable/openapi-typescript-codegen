@@ -4,7 +4,7 @@ async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, ur
         headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (config.WITH_CREDENTIALS) {
+    if (config.withCredentials) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
