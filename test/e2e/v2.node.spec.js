@@ -21,7 +21,7 @@ describe('v2.node', () => {
         OpenAPI.token = tokenRequest;
         const result = await SimpleService.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -33,7 +33,7 @@ describe('v2.node', () => {
                 },
             },
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });
 
@@ -54,7 +54,7 @@ describe('v2.node with client', () => {
         const client = new AppClient({ token: tokenRequest });
         const result = await client.simple.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -67,6 +67,6 @@ describe('v2.node with client', () => {
                 },
             },
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });

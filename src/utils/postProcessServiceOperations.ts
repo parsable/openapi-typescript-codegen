@@ -22,7 +22,7 @@ export function postProcessServiceOperations(service: Service, exportClient: boo
         names.set(name, index + 1);
 
         // Update the operation path with the dynamically injected version
-        clone.path = clone.path.replace('${apiVersion}', exportClient ? '${this.ClientConfig.version}' : '${OpenAPI.version}');
+        clone.path = clone.path.replace('${apiVersion}', exportClient ? '${this.clientConfig.version}' : '${OpenAPI.version}');
 
         return clone;
     });

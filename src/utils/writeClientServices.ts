@@ -42,6 +42,18 @@ export async function writeClientServices(
             httpClientRequest: getHttpRequestName(httpClient),
         });
         await writeFile(file, format(templateResult));
+
+        const fileFull = resolve(outputPath, `${service.name}Full.ts`);
+        const templateFullResult = templates.services.serviceFull({
+            ...service,
+            httpClient,
+            useUnionTypes,
+            useVersion,
+            useOptions,
+            exportClient,
+            httpClientRequest: getHttpRequestName(httpClient),
+        });
+        await writeFile(fileFull, format(templateFullResult));
     }
 
     await writeFile(resolve(outputPath, 'index.ts'), templates.services.index({ services: sortServicesByName(services) }));

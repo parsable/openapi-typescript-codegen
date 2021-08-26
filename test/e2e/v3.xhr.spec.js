@@ -29,7 +29,7 @@ describe('v3.xhr', () => {
             OpenAPI.password = undefined;
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
@@ -40,7 +40,7 @@ describe('v3.xhr', () => {
             OpenAPI.password = 'password';
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -79,7 +79,7 @@ describe('v3.xhr with client', () => {
             const client = new AppClient({ token: window.tokenRequest, username: undefined, password: undefined });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
@@ -88,7 +88,7 @@ describe('v3.xhr with client', () => {
             const client = new AppClient({ token: undefined, username: 'username', password: 'password' });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -103,6 +103,6 @@ describe('v3.xhr with client', () => {
                 },
             });
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });

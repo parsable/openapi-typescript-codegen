@@ -27,7 +27,7 @@ describe('v2.xhr', () => {
             OpenAPI.token = window.tokenRequest;
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -41,7 +41,7 @@ describe('v2.xhr', () => {
                 },
             });
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });
 
@@ -66,7 +66,7 @@ describe('v2.xhr with client', () => {
             const client = new AppClient({ token: window.tokenRequest });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('complexService', async () => {
@@ -81,6 +81,6 @@ describe('v2.xhr with client', () => {
                 },
             });
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });

@@ -25,6 +25,7 @@ describe('writeClientServices', () => {
             },
             services: {
                 service: () => 'service',
+                serviceFull: () => 'serviceFull',
                 index: () => 'serviceIndex',
             },
             schemas: {
@@ -50,6 +51,7 @@ describe('writeClientServices', () => {
         await writeClientServices(services, templates, '/', HttpClient.FETCH, false, false, false);
 
         expect(writeFile).toBeCalledWith('/MyService.ts', 'service');
+        expect(writeFile).toBeCalledWith('/MyServiceFull.ts', 'serviceFull');
         expect(writeFile).toBeCalledWith('/index.ts', 'serviceIndex');
     });
 });

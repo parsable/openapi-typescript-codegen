@@ -23,7 +23,7 @@ describe('v3.node', () => {
         OpenAPI.password = undefined;
         const result = await SimpleService.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
@@ -32,7 +32,7 @@ describe('v3.node', () => {
         OpenAPI.username = 'username';
         OpenAPI.password = 'password';
         const result = await SimpleService.getCallWithoutParametersAndResponse();
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -44,7 +44,7 @@ describe('v3.node', () => {
                 },
             },
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });
 
@@ -65,14 +65,14 @@ describe('v3.node with client', () => {
         const client = new AppClient({ token: tokenRequest, username: undefined, password: undefined });
         const result = await client.simple.getCallWithoutParametersAndResponse();
         expect(tokenRequest.mock.calls.length).toBe(1);
-        expect(result.body.headers.authorization).toBe('Bearer MY_TOKEN');
+        expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
     });
 
     it('uses credentials', async () => {
         const { AppClient } = require('./generated/v3/node_client/index.js');
         const client = new AppClient({ token: undefined, username: 'username', password: 'password' });
         const result = await client.simple.getCallWithoutParametersAndResponse();
-        expect(result.body.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
+        expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
     });
 
     it('complexService', async () => {
@@ -85,6 +85,6 @@ describe('v3.node with client', () => {
                 },
             },
         });
-        expect(result.body).toBeDefined();
+        expect(result).toBeDefined();
     });
 });

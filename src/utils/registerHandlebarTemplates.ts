@@ -52,6 +52,7 @@ import partialIsNullable from '../templates/partials/isNullable.hbs';
 import partialIsReadOnly from '../templates/partials/isReadOnly.hbs';
 import partialIsRequired from '../templates/partials/isRequired.hbs';
 import partialParameters from '../templates/partials/parameters.hbs';
+import partialPassParameters from '../templates/partials/passParameters.hbs';
 import partialResult from '../templates/partials/result.hbs';
 import partialSchema from '../templates/partials/schema.hbs';
 import partialSchemaArray from '../templates/partials/schemaArray.hbs';
@@ -72,6 +73,7 @@ import partialTypeUnion from '../templates/partials/typeUnion.hbs';
 import templateExportSchema from '../templates/schemas/exportSchema.hbs';
 import templateExportSchemaIndex from '../templates/schemas/index.hbs';
 import templateExportService from '../templates/services/exportService.hbs';
+import templateExportServiceFull from '../templates/services/exportServiceFull.hbs';
 import templateExportServiceIndex from '../templates/services/index.hbs';
 import { registerHandlebarHelpers } from './registerHandlebarHelpers';
 
@@ -84,6 +86,7 @@ export interface Templates {
     };
     services: {
         service: Handlebars.TemplateDelegate;
+        serviceFull: Handlebars.TemplateDelegate;
         index: Handlebars.TemplateDelegate;
     };
     schemas: {
@@ -123,6 +126,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
         },
         services: {
             service: Handlebars.template(templateExportService),
+            serviceFull: Handlebars.template(templateExportServiceFull),
             index: Handlebars.template(templateExportServiceIndex),
         },
         schemas: {
@@ -155,6 +159,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     Handlebars.registerPartial('isReadOnly', Handlebars.template(partialIsReadOnly));
     Handlebars.registerPartial('isRequired', Handlebars.template(partialIsRequired));
     Handlebars.registerPartial('parameters', Handlebars.template(partialParameters));
+    Handlebars.registerPartial('passParameters', Handlebars.template(partialPassParameters));
     Handlebars.registerPartial('result', Handlebars.template(partialResult));
     Handlebars.registerPartial('schema', Handlebars.template(partialSchema));
     Handlebars.registerPartial('schemaArray', Handlebars.template(partialSchemaArray));
