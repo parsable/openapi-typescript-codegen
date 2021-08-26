@@ -1,4 +1,4 @@
-function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
+function getUrl(options: ApiRequestOptions, config: ClientConfig): string {
     const path = options.path.replace(/[:]/g, '_');
     const url = `${config.baseUrl}${path}`;
 

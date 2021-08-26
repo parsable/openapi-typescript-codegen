@@ -8,7 +8,7 @@ import type {
 } from '../models';
 {{/if}}
 {{#if @root.exportClient}}
-import type { ApiResult, BaseHttpRequest, OpenAPIConfig } from '../core';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
 {{else}}
 import type { ApiResult } from '../core';
 import {
@@ -22,11 +22,11 @@ import {
 export class {{{name}}} {
     {{#if @root.exportClient}}
     private readonly httpRequest: BaseHttpRequest;
-    private readonly openApiConfig: OpenAPIConfig;
+    private readonly ClientConfig: ClientConfig;
 
-    constructor(httpRequest: BaseHttpRequest, openApiConfig: OpenAPIConfig) {
+    constructor(httpRequest: BaseHttpRequest, ClientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
-        this.openApiConfig = openApiConfig;
+        this.ClientConfig = ClientConfig;
     }
     {{/if}}
 
@@ -102,7 +102,7 @@ export class {{{name}}} {
                 {{/each}}
             },
             {{/if}}
-        }{{#if @root.exportClient}}, this.openApiConfig, config{{/if}});
+        }{{#if @root.exportClient}}, this.ClientConfig, config{{/if}});
     }
 
     {{/each}}

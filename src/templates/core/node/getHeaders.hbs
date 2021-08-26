@@ -1,4 +1,4 @@
-async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
+async function getHeaders(options: ApiRequestOptions, config: ClientConfig): Promise<Headers> {
     const token = await resolve(options, config.token);
     const username = await resolve(options, config.username);
     const password = await resolve(options, config.password);

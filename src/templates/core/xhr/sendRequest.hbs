@@ -1,4 +1,4 @@
-async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<XMLHttpRequest> {
+async function sendRequest(options: ApiRequestOptions, config: ClientConfig, url: string): Promise<XMLHttpRequest> {
 
     const xhr = new XMLHttpRequest();
     xhr.open(options.method, url, true);
