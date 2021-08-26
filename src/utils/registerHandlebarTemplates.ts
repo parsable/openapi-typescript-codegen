@@ -25,13 +25,8 @@ import fetchGetResponseBody from '../templates/core/fetch/getResponseBody.hbs';
 import fetchGetResponseHeader from '../templates/core/fetch/getResponseHeader.hbs';
 import fetchRequest from '../templates/core/fetch/request.hbs';
 import fetchSendRequest from '../templates/core/fetch/sendRequest.hbs';
-<<<<<<< HEAD
 import functionBase64 from '../templates/core/functions/base64.hbs';
 import functionCatchErrorCodes from '../templates/core/functions/catchErrorCodes.hbs';
-=======
-import functionCatchErrors from '../templates/core/functions/catchErrors.hbs';
-import functionDeepAssign from '../templates/core/functions/deepAssign.hbs';
->>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 import functionGetFormData from '../templates/core/functions/getFormData.hbs';
 import functionGetQueryString from '../templates/core/functions/getQueryString.hbs';
 import functionGetUrl from '../templates/core/functions/getUrl.hbs';
@@ -42,11 +37,7 @@ import functionIsString from '../templates/core/functions/isString.hbs';
 import functionIsStringWithValue from '../templates/core/functions/isStringWithValue.hbs';
 import functionIsSuccess from '../templates/core/functions/isSuccess.hbs';
 import functionResolve from '../templates/core/functions/resolve.hbs';
-<<<<<<< HEAD
 import templateCoreHttpRequest from '../templates/core/HttpRequest.hbs';
-=======
-import templateCoreIndex from '../templates/core/index.hbs';
->>>>>>> 131d3f5 (PE-2152 - export index files)
 import nodeGetHeaders from '../templates/core/node/getHeaders.hbs';
 import nodeGetRequestBody from '../templates/core/node/getRequestBody.hbs';
 import nodeGetResponseBody from '../templates/core/node/getResponseBody.hbs';
@@ -61,10 +52,10 @@ import xhrGetResponseBody from '../templates/core/xhr/getResponseBody.hbs';
 import xhrGetResponseHeader from '../templates/core/xhr/getResponseHeader.hbs';
 import xhrRequest from '../templates/core/xhr/request.hbs';
 import xhrSendRequest from '../templates/core/xhr/sendRequest.hbs';
-import templateAppClient from '../templates/exportAppClient.hbs';
+import templateExportModel from '../templates/exportModel.hbs';
+import templateExportSchema from '../templates/exportSchema.hbs';
+import templateExportService from '../templates/exportService.hbs';
 import templateIndex from '../templates/index.hbs';
-import templateExportModel from '../templates/models/exportModel.hbs';
-import templateExportModelIndex from '../templates/models/index.hbs';
 import partialBase from '../templates/partials/base.hbs';
 import partialExportComposition from '../templates/partials/exportComposition.hbs';
 import partialExportEnum from '../templates/partials/exportEnum.hbs';
@@ -92,29 +83,17 @@ import partialTypeInterface from '../templates/partials/typeInterface.hbs';
 import partialTypeIntersection from '../templates/partials/typeIntersection.hbs';
 import partialTypeReference from '../templates/partials/typeReference.hbs';
 import partialTypeUnion from '../templates/partials/typeUnion.hbs';
-import templateExportSchema from '../templates/schemas/exportSchema.hbs';
-import templateExportSchemaIndex from '../templates/schemas/index.hbs';
-import templateExportService from '../templates/services/exportService.hbs';
-import templateExportServiceIndex from '../templates/services/index.hbs';
 import { registerHandlebarHelpers } from './registerHandlebarHelpers';
 
 export interface Templates {
     index: Handlebars.TemplateDelegate;
     client: Handlebars.TemplateDelegate;
-    models: {
+    exports: {
         model: Handlebars.TemplateDelegate;
-        index: Handlebars.TemplateDelegate;
-    };
-    services: {
-        service: Handlebars.TemplateDelegate;
-        index: Handlebars.TemplateDelegate;
-    };
-    schemas: {
         schema: Handlebars.TemplateDelegate;
-        index: Handlebars.TemplateDelegate;
+        service: Handlebars.TemplateDelegate;
     };
     core: {
-        index: Handlebars.TemplateDelegate;
         settings: Handlebars.TemplateDelegate;
         apiError: Handlebars.TemplateDelegate;
         apiRequestOptions: Handlebars.TemplateDelegate;
@@ -140,26 +119,13 @@ export const registerHandlebarTemplates = (root: {
     // Main templates (entry points for the files we write to disk)
     const templates: Templates = {
         index: Handlebars.template(templateIndex),
-<<<<<<< HEAD
         client: Handlebars.template(templateClient),
         exports: {
-=======
-        client: Handlebars.template(templateAppClient),
-        models: {
->>>>>>> 131d3f5 (PE-2152 - export index files)
             model: Handlebars.template(templateExportModel),
-            index: Handlebars.template(templateExportModelIndex),
-        },
-        services: {
-            service: Handlebars.template(templateExportService),
-            index: Handlebars.template(templateExportServiceIndex),
-        },
-        schemas: {
             schema: Handlebars.template(templateExportSchema),
-            index: Handlebars.template(templateExportSchemaIndex),
+            service: Handlebars.template(templateExportService),
         },
         core: {
-            index: Handlebars.template(templateCoreIndex),
             settings: Handlebars.template(templateCoreSettings),
             apiError: Handlebars.template(templateCoreApiError),
             apiRequestOptions: Handlebars.template(templateCoreApiRequestOptions),
@@ -211,11 +177,7 @@ export const registerHandlebarTemplates = (root: {
     Handlebars.registerPartial('functions/isString', Handlebars.template(functionIsString));
     Handlebars.registerPartial('functions/isStringWithValue', Handlebars.template(functionIsStringWithValue));
     Handlebars.registerPartial('functions/isSuccess', Handlebars.template(functionIsSuccess));
-<<<<<<< HEAD
     Handlebars.registerPartial('functions/base64', Handlebars.template(functionBase64));
-=======
-    Handlebars.registerPartial('functions/deepAssign', Handlebars.template(functionDeepAssign));
->>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
     Handlebars.registerPartial('functions/resolve', Handlebars.template(functionResolve));
 
     // Specific files for the fetch client implementation

@@ -2,7 +2,7 @@
 
 import type { BaseHttpRequest } from './core';
 import { {{{httpClientRequest}}} } from './core';
-import type { OpenAPIConfig } from './core';
+import type { ClientConfig } from './core';
 {{#if services}}
 import {
 {{#each services}}
@@ -16,15 +16,15 @@ export class {{{clientName}}} {
     readonly {{{shortName}}}: {{{name}}};
 {{/each}}
 
-    constructor(openApiConfig: OpenAPIConfig, httpClient: BaseHttpRequest = new {{{httpClientRequest}}}()) {
+    constructor(ClientConfig: ClientConfig, httpClient: BaseHttpRequest = new {{{httpClientRequest}}}()) {
         const config = {
-            baseUrl: openApiConfig?.baseUrl ?? '{{{server}}}',
-            version: openApiConfig?.version ?? '{{{version}}}',
-            withCredentials: openApiConfig?.withCredentials ?? false,
-            token: openApiConfig?.token,
-            username: openApiConfig?.username,
-            password: openApiConfig?.password,
-            headers: openApiConfig?.headers,
+            baseUrl: ClientConfig?.baseUrl ?? '{{{server}}}',
+            version: ClientConfig?.version ?? '{{{version}}}',
+            withCredentials: ClientConfig?.withCredentials ?? false,
+            token: ClientConfig?.token,
+            username: ClientConfig?.username,
+            password: ClientConfig?.password,
+            headers: ClientConfig?.headers,
         }
         {{#each services}}
         this.{{{shortName}}} = new {{{name}}}(httpClient, config);

@@ -1,6 +1,5 @@
 {{>header}}
 
-<<<<<<< HEAD
 {{#if @root.exportClient}}
 export { {{{clientName}}} } from './{{{clientName}}}';
 
@@ -13,7 +12,6 @@ export { BaseHttpRequest } from './core/BaseHttpRequest';
 export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
-{{/if}}
 {{/if}}
 {{#if @root.exportModels}}
 {{#if models}}
@@ -30,30 +28,20 @@ export type { {{{name}}}{{#if @root.postfixModels}} as {{{name}}}{{{@root.postfi
 {{/if}}
 {{/each}}
 {{/if}}
-=======
-{{#if @root.exportCore}}
-export * from './core';
-{{/if}}
-{{#if @root.exportModels}}
-export * from './models';
->>>>>>> 131d3f5 (PE-2152 - export index files)
 {{/if}}
 {{#if @root.exportSchemas}}
-export * from './schemas';
+{{#if models}}
+
+{{#each models}}
+export { ${{{name}}} } from './schemas/${{{name}}}';
+{{/each}}
+{{/if}}
 {{/if}}
 {{#if @root.exportServices}}
-<<<<<<< HEAD
 {{#if services}}
 
 {{#each services}}
 export { {{{name}}}{{{@root.postfixServices}}} } from './services/{{{name}}}{{{@root.postfixServices}}}';
 {{/each}}
 {{/if}}
-=======
-export * from './services';
->>>>>>> 131d3f5 (PE-2152 - export index files)
-{{/if}}
-
-{{#if @root.exportClient}}
-export { {{{clientName}}} } from './client';
 {{/if}}

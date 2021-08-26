@@ -18,29 +18,17 @@ describe('writeClientIndex', () => {
         const templates: Templates = {
             index: () => 'index',
             client: () => 'client',
-            models: {
+            exports: {
                 model: () => 'model',
-                index: () => 'modelIndex',
-            },
-            services: {
-                service: () => 'service',
-                index: () => 'serviceIndex',
-            },
-            schemas: {
                 schema: () => 'schema',
-                index: () => 'schemaIndex',
+                service: () => 'service',
             },
             core: {
-                index: () => 'coreIndex',
                 settings: () => 'settings',
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
                 apiResult: () => 'apiResult',
-<<<<<<< HEAD
                 cancelablePromise: () => 'cancelablePromise',
-=======
-                baseHttpRequest: () => 'baseHttpRequest',
->>>>>>> 131d3f5 (PE-2152 - export index files)
                 request: () => 'request',
                 baseHttpRequest: () => 'baseHttpRequest',
                 httpRequest: () => 'httpRequest',

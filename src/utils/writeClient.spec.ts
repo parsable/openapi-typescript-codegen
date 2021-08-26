@@ -19,20 +19,12 @@ describe('writeClient', () => {
         const templates: Templates = {
             index: () => 'index',
             client: () => 'client',
-            models: {
+            exports: {
                 model: () => 'model',
-                index: () => 'modelIndex',
-            },
-            services: {
-                service: () => 'service',
-                index: () => 'serviceIndex',
-            },
-            schemas: {
                 schema: () => 'schema',
-                index: () => 'schemaIndex',
+                service: () => 'service',
             },
             core: {
-                index: () => 'coreIndex',
                 settings: () => 'settings',
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
@@ -40,16 +32,7 @@ describe('writeClient', () => {
                 cancelablePromise: () => 'cancelablePromise',
                 request: () => 'request',
                 baseHttpRequest: () => 'baseHttpRequest',
-<<<<<<< HEAD
                 httpRequest: () => 'httpRequest',
-=======
-                request: () => 'request',
-                httpRequest: {
-                    fetch: () => 'fetchRequest',
-                    node: () => 'nodeRequest',
-                    xhr: () => 'xhrRequest',
-                },
->>>>>>> 131d3f5 (PE-2152 - export index files)
             },
         };
 

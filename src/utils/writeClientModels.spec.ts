@@ -34,20 +34,12 @@ describe('writeClientModels', () => {
         const templates: Templates = {
             index: () => 'index',
             client: () => 'client',
-            models: {
+            exports: {
                 model: () => 'model',
-                index: () => 'modelIndex',
-            },
-            services: {
-                service: () => 'service',
-                index: () => 'serviceIndex',
-            },
-            schemas: {
                 schema: () => 'schema',
-                index: () => 'schemaIndex',
+                service: () => 'service',
             },
             core: {
-                index: () => 'coreIndex',
                 settings: () => 'settings',
                 apiError: () => 'apiError',
                 apiRequestOptions: () => 'apiRequestOptions',
@@ -61,11 +53,6 @@ describe('writeClientModels', () => {
 
         await writeClientModels(models, templates, '/', HttpClient.FETCH, false, Indent.SPACE_4);
 
-<<<<<<< HEAD
         expect(writeFile).toBeCalledWith('/User.ts', `model${EOL}`);
-=======
-        expect(writeFile).toBeCalledWith('/MyModel.ts', 'model');
-        expect(writeFile).toBeCalledWith('/index.ts', 'modelIndex');
->>>>>>> 131d3f5 (PE-2152 - export index files)
     });
 });

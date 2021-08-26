@@ -11,15 +11,9 @@ export const sendRequest = async (
 	xhr.open(options.method, url, true);
 	xhr.withCredentials = config.WITH_CREDENTIALS;
 
-<<<<<<< HEAD
 	headers.forEach((value, key) => {
 		xhr.setRequestHeader(key, value);
 	});
-=======
-    const xhr = new XMLHttpRequest();
-    xhr.open(options.method, url, true);
-    xhr.withCredentials = config.withCredentials ?? false;
->>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 	return new Promise<XMLHttpRequest>((resolve, reject) => {
 		xhr.onload = () => resolve(xhr);

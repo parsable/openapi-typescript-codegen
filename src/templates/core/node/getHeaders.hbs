@@ -1,16 +1,8 @@
-<<<<<<< HEAD
 export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptions): Promise<Headers> => {
 	const token = await resolve(options, config.TOKEN);
 	const username = await resolve(options, config.USERNAME);
 	const password = await resolve(options, config.PASSWORD);
 	const additionalHeaders = await resolve(options, config.HEADERS);
-=======
-async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
-    const token = await resolve(options, config.token);
-    const username = await resolve(options, config.username);
-    const password = await resolve(options, config.password);
-    const defaultHeaders = await resolve(options, config.headers);
->>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)
 
 	const headers = Object.entries({
 		Accept: 'application/json',

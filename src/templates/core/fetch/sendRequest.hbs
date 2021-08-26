@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export const sendRequest = async (
 	config: OpenAPIConfig,
 	options: ApiRequestOptions,
@@ -25,16 +24,3 @@ export const sendRequest = async (
 
 	return await fetch(url, request);
 };
-=======
-async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
-    const request: RequestInit = {
-        method: options.method,
-        headers: await getHeaders(options, config),
-        body: getRequestBody(options),
-    };
-    if (config.withCredentials) {
-        request.credentials = 'include';
-    }
-    return await fetch(url, request);
-}
->>>>>>> 1ee6314 (PE-2229 - rename OpenApi properties, remove config from http client, add config to request)

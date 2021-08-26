@@ -4,15 +4,9 @@ import type { Model } from '../client/interfaces/Model';
 import type { HttpClient } from '../HttpClient';
 import type { Indent } from '../Indent';
 import { writeFile } from './fileSystem';
-<<<<<<< HEAD
 import { formatCode as f } from './formatCode';
 import { formatIndentation as i } from './formatIndentation';
 import type { Templates } from './registerHandlebarTemplates';
-=======
-import { format } from './format';
-import { Templates } from './registerHandlebarTemplates';
-import { sortModelsByName } from './sortModelsByName';
->>>>>>> 131d3f5 (PE-2152 - export index files)
 
 /**
  * Generate Models using the Handlebar template and write to disk.
@@ -33,16 +27,11 @@ export const writeClientModels = async (
 ): Promise<void> => {
     for (const model of models) {
         const file = resolve(outputPath, `${model.name}.ts`);
-        const templateResult = templates.models.model({
+        const templateResult = templates.exports.model({
             ...model,
             httpClient,
             useUnionTypes,
         });
         await writeFile(file, i(f(templateResult), indent));
     }
-<<<<<<< HEAD
 };
-=======
-    await writeFile(resolve(outputPath, `index.ts`), templates.models.index({ models: sortModelsByName(models) }));
-}
->>>>>>> 131d3f5 (PE-2152 - export index files)
