@@ -123,12 +123,12 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
 import type { OpenAPIConfig } from './OpenAPI';
 
-export interface BaseHttpRequest {
-    request(
+export interface BaseHttpRequest<T = any> {
+    request<K = T>(
         options: ApiRequestOptions,
         config: OpenAPIConfig,
         mergeConfig?: OpenAPIConfig
-    ): Promise<ApiResult>;
+    ): Promise<ApiResult<K>>;
 }"
 `;
 
@@ -2791,12 +2791,12 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
 import type { OpenAPIConfig } from './OpenAPI';
 
-export interface BaseHttpRequest {
-    request(
+export interface BaseHttpRequest<T = any> {
+    request<K = T>(
         options: ApiRequestOptions,
         config: OpenAPIConfig,
         mergeConfig?: OpenAPIConfig
-    ): Promise<ApiResult>;
+    ): Promise<ApiResult<K>>;
 }"
 `;
 
