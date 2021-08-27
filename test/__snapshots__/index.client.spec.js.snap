@@ -33,15 +33,15 @@ export class TestClient {
     readonly simple: SimpleService;
     readonly types: TypesService;
 
-    constructor(ClientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
         const config = {
-            baseUrl: ClientConfig?.baseUrl ?? 'http://localhost:3000/base',
-            version: ClientConfig?.version ?? '1.0',
-            withCredentials: ClientConfig?.withCredentials ?? false,
-            token: ClientConfig?.token,
-            username: ClientConfig?.username,
-            password: ClientConfig?.password,
-            headers: ClientConfig?.headers,
+            baseUrl: clientConfig?.baseUrl ?? 'http://localhost:3000/base',
+            version: clientConfig?.version ?? '1.0',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
         }
         this.collectionformat = new CollectionFormatService(httpClient, config);
         this.complex = new ComplexService(httpClient, config);
@@ -1999,14 +1999,11 @@ export class CollectionFormatService {
         parameterArrayMulti: Array<string>,
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.collectionFormat(    parameterArrayCsv,
-        parameterArraySsv,
-        parameterArrayTsv,
-        parameterArrayPipes,
-        parameterArrayMulti,
-        config
-    )).body;
-}
+        return (await this.full.collectionFormat(
+            parameterArrayCsv, parameterArraySsv, parameterArrayTsv, parameterArrayPipes, parameterArrayMulti, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -2099,11 +2096,11 @@ export class ComplexService {
         parameterReference: ModelWithString,
         config?: ClientConfig
     ): Promise<Array<ModelWithString>> {
-        return (await this.full.complexTypes(    parameterObject,
-        parameterReference,
-        config
-    )).body;
-}
+        return (await this.full.complexTypes(
+            parameterObject, parameterReference, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -2202,69 +2199,59 @@ export class DefaultsService {
         },
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.callWithDefaultParameters(    parameterString,
-        parameterNumber,
-        parameterBoolean,
-        parameterEnum,
-        parameterModel,
-        config
-    )).body;
-}
-/**
- * @param parameterString This is a simple string that is optional with default value
- * @param parameterNumber This is a simple number that is optional with default value
- * @param parameterBoolean This is a simple boolean that is optional with default value
- * @param parameterEnum This is a simple enum that is optional with default value
- * @param parameterModel This is a simple model that is optional with default value
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callWithDefaultOptionalParameters(
-    parameterString: string = 'Hello World!',
-    parameterNumber: number = 123,
-    parameterBoolean: boolean = true,
-    parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
-    parameterModel: ModelWithString = {
-        \\"prop\\": \\"Hello World!\\"
-    },
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callWithDefaultOptionalParameters(    parameterString,
-    parameterNumber,
-    parameterBoolean,
-    parameterEnum,
-    parameterModel,
-    config
-)).body;
-}
-/**
- * @param parameterStringWithNoDefault This is a string with no default
- * @param parameterOptionalStringWithDefault This is a optional string with default
- * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
- * @param parameterOptionalStringWithNoDefault This is a optional string with no default
- * @param parameterStringWithDefault This is a string with default
- * @param parameterStringWithEmptyDefault This is a string with empty default
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callToTestOrderOfParams(
-    parameterStringWithNoDefault: string,
-    parameterOptionalStringWithDefault: string = 'Hello World!',
-    parameterOptionalStringWithEmptyDefault: string = '',
-    parameterOptionalStringWithNoDefault?: string,
-    parameterStringWithDefault: string = 'Hello World!',
-    parameterStringWithEmptyDefault: string = '',
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callToTestOrderOfParams(    parameterStringWithNoDefault,
-    parameterOptionalStringWithDefault,
-    parameterOptionalStringWithEmptyDefault,
-    parameterOptionalStringWithNoDefault,
-    parameterStringWithDefault,
-    parameterStringWithEmptyDefault,
-    config
-)).body;
-}
+        return (await this.full.callWithDefaultParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
+    }
+
+    /**
+     * @param parameterString This is a simple string that is optional with default value
+     * @param parameterNumber This is a simple number that is optional with default value
+     * @param parameterBoolean This is a simple boolean that is optional with default value
+     * @param parameterEnum This is a simple enum that is optional with default value
+     * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultOptionalParameters(
+        parameterString: string = 'Hello World!',
+        parameterNumber: number = 123,
+        parameterBoolean: boolean = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callWithDefaultOptionalParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
+    }
+
+    /**
+     * @param parameterStringWithNoDefault This is a string with no default
+     * @param parameterOptionalStringWithDefault This is a optional string with default
+     * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
+     * @param parameterOptionalStringWithNoDefault This is a optional string with no default
+     * @param parameterStringWithDefault This is a string with default
+     * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callToTestOrderOfParams(
+        parameterStringWithNoDefault: string,
+        parameterOptionalStringWithDefault: string = 'Hello World!',
+        parameterOptionalStringWithEmptyDefault: string = '',
+        parameterOptionalStringWithNoDefault?: string,
+        parameterStringWithDefault: string = 'Hello World!',
+        parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callToTestOrderOfParams(
+            parameterStringWithNoDefault, parameterOptionalStringWithDefault, parameterOptionalStringWithEmptyDefault, parameterOptionalStringWithNoDefault, parameterStringWithDefault, parameterStringWithEmptyDefault, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -2413,6 +2400,7 @@ export class DuplicateService {
     public async duplicateName(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2420,6 +2408,7 @@ export class DuplicateService {
     public async duplicateName1(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName1(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2427,6 +2416,7 @@ export class DuplicateService {
     public async duplicateName2(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName2(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2434,6 +2424,7 @@ export class DuplicateService {
     public async duplicateName3(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName3(config)).body;
     }
+
 }"
 `;
 
@@ -2527,6 +2518,7 @@ export class HeaderService {
     public async callWithResultFromHeader(config?: ClientConfig): Promise<string> {
         return (await this.full.callWithResultFromHeader(config)).body;
     }
+
 }"
 `;
 
@@ -2593,6 +2585,7 @@ export class NoContentService {
     public async callWithNoContentResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.callWithNoContentResponse(config)).body;
     }
+
 }"
 `;
 
@@ -2663,48 +2656,39 @@ export class ParametersService {
         parameterPath: string,
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.callWithParameters(    parameterHeader,
-        parameterQuery,
-        parameterForm,
-        parameterBody,
-        parameterPath,
-        config
-    )).body;
-}
-/**
- * @param parameterHeader This is the parameter that goes into the request header
- * @param parameterQuery This is the parameter that goes into the request query params
- * @param parameterForm This is the parameter that goes into the request form data
- * @param parameterBody This is the parameter that is send as request body
- * @param parameterPath1 This is the parameter that goes into the path
- * @param parameterPath2 This is the parameter that goes into the path
- * @param parameterPath3 This is the parameter that goes into the path
- * @param _default This is the parameter with a reserved keyword
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callWithWeirdParameterNames(
-    parameterHeader: string,
-    parameterQuery: string,
-    parameterForm: string,
-    parameterBody: string,
-    parameterPath1?: string,
-    parameterPath2?: string,
-    parameterPath3?: string,
-    _default?: string,
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callWithWeirdParameterNames(    parameterHeader,
-    parameterQuery,
-    parameterForm,
-    parameterBody,
-    parameterPath1,
-    parameterPath2,
-    parameterPath3,
-    _default,
-    config
-)).body;
-}
+        return (await this.full.callWithParameters(
+            parameterHeader, parameterQuery, parameterForm, parameterBody, parameterPath, config
+        )).body;
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the request header
+     * @param parameterQuery This is the parameter that goes into the request query params
+     * @param parameterForm This is the parameter that goes into the request form data
+     * @param parameterBody This is the parameter that is send as request body
+     * @param parameterPath1 This is the parameter that goes into the path
+     * @param parameterPath2 This is the parameter that goes into the path
+     * @param parameterPath3 This is the parameter that goes into the path
+     * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithWeirdParameterNames(
+        parameterHeader: string,
+        parameterQuery: string,
+        parameterForm: string,
+        parameterBody: string,
+        parameterPath1?: string,
+        parameterPath2?: string,
+        parameterPath3?: string,
+        _default?: string,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callWithWeirdParameterNames(
+            parameterHeader, parameterQuery, parameterForm, parameterBody, parameterPath1, parameterPath2, parameterPath3, _default, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -2832,6 +2816,7 @@ export class ResponseService {
     public async callWithResponse(config?: ClientConfig): Promise<ModelWithString> {
         return (await this.full.callWithResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Message for default response
@@ -2840,6 +2825,7 @@ export class ResponseService {
     public async callWithDuplicateResponses(config?: ClientConfig): Promise<ModelWithString> {
         return (await this.full.callWithDuplicateResponses(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @returns any Message for 200 response
@@ -2855,6 +2841,7 @@ export class ResponseService {
     } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends> {
         return (await this.full.callWithResponses(config)).body;
     }
+
 }"
 `;
 
@@ -2961,6 +2948,7 @@ export class SimpleService {
     public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.getCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2968,6 +2956,7 @@ export class SimpleService {
     public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.putCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2975,6 +2964,7 @@ export class SimpleService {
     public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.postCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2982,6 +2972,7 @@ export class SimpleService {
     public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.deleteCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2989,6 +2980,7 @@ export class SimpleService {
     public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.optionsCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -2996,6 +2988,7 @@ export class SimpleService {
     public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.headCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -3003,6 +2996,7 @@ export class SimpleService {
     public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.patchCallWithoutParametersAndResponse(config)).body;
     }
+
 }"
 `;
 
@@ -3148,17 +3142,11 @@ export class TypesService {
         id?: number,
         config?: ClientConfig
     ): Promise<number | string | boolean | any> {
-        return (await this.full.types(    parameterArray,
-        parameterDictionary,
-        parameterEnum,
-        parameterNumber,
-        parameterString,
-        parameterBoolean,
-        parameterObject,
-        id,
-        config
-    )).body;
-}
+        return (await this.full.types(
+            parameterArray, parameterDictionary, parameterEnum, parameterNumber, parameterString, parameterBoolean, parameterObject, id, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -3290,15 +3278,15 @@ export class TestClient {
     readonly types: TypesService;
     readonly upload: UploadService;
 
-    constructor(ClientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
         const config = {
-            baseUrl: ClientConfig?.baseUrl ?? 'http://localhost:3000/base',
-            version: ClientConfig?.version ?? '1.0',
-            withCredentials: ClientConfig?.withCredentials ?? false,
-            token: ClientConfig?.token,
-            username: ClientConfig?.username,
-            password: ClientConfig?.password,
-            headers: ClientConfig?.headers,
+            baseUrl: clientConfig?.baseUrl ?? 'http://localhost:3000/base',
+            version: clientConfig?.version ?? '1.0',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
         }
         this.collectionformat = new CollectionFormatService(httpClient, config);
         this.complex = new ComplexService(httpClient, config);
@@ -5534,14 +5522,11 @@ export class CollectionFormatService {
         parameterArrayMulti: Array<string> | null,
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.collectionFormat(    parameterArrayCsv,
-        parameterArraySsv,
-        parameterArrayTsv,
-        parameterArrayPipes,
-        parameterArrayMulti,
-        config
-    )).body;
-}
+        return (await this.full.collectionFormat(
+            parameterArrayCsv, parameterArraySsv, parameterArrayTsv, parameterArrayPipes, parameterArrayMulti, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -5637,40 +5622,40 @@ export class ComplexService {
         parameterReference: ModelWithString,
         config?: ClientConfig
     ): Promise<Array<ModelWithString>> {
-        return (await this.full.complexTypes(    parameterObject,
-        parameterReference,
-        config
-    )).body;
-}
-/**
- * @param id
- * @param requestBody
- * @param [config] the optional OpenAPI config to use
- * @returns ModelWithString Success
- * @throws ApiError
- */
-public async complexParams(
-    id: number,
-    requestBody?: {
-        readonly key: string | null,
-        name: string | null,
-        enabled: boolean,
-        readonly type: 'Monkey' | 'Horse' | 'Bird',
-        listOfModels?: Array<ModelWithString> | null,
-        listOfStrings?: Array<string> | null,
-        parameters: (ModelWithString | ModelWithEnum | ModelWithArray | ModelWithDictionary),
-        readonly user?: {
-            readonly id?: number,
-            readonly name?: string | null,
+        return (await this.full.complexTypes(
+            parameterObject, parameterReference, config
+        )).body;
+    }
+
+    /**
+     * @param id
+     * @param requestBody
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Success
+     * @throws ApiError
+     */
+    public async complexParams(
+        id: number,
+        requestBody?: {
+            readonly key: string | null,
+            name: string | null,
+            enabled: boolean,
+            readonly type: 'Monkey' | 'Horse' | 'Bird',
+            listOfModels?: Array<ModelWithString> | null,
+            listOfStrings?: Array<string> | null,
+            parameters: (ModelWithString | ModelWithEnum | ModelWithArray | ModelWithDictionary),
+            readonly user?: {
+                readonly id?: number,
+                readonly name?: string | null,
+            },
         },
-    },
-    config?: ClientConfig
-): Promise<ModelWithString> {
-    return (await this.full.complexParams(    id,
-    requestBody,
-    config
-)).body;
-}
+        config?: ClientConfig
+    ): Promise<ModelWithString> {
+        return (await this.full.complexParams(
+            id, requestBody, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -5804,69 +5789,59 @@ export class DefaultsService {
         },
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.callWithDefaultParameters(    parameterString,
-        parameterNumber,
-        parameterBoolean,
-        parameterEnum,
-        parameterModel,
-        config
-    )).body;
-}
-/**
- * @param parameterString This is a simple string that is optional with default value
- * @param parameterNumber This is a simple number that is optional with default value
- * @param parameterBoolean This is a simple boolean that is optional with default value
- * @param parameterEnum This is a simple enum that is optional with default value
- * @param parameterModel This is a simple model that is optional with default value
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callWithDefaultOptionalParameters(
-    parameterString: string = 'Hello World!',
-    parameterNumber: number = 123,
-    parameterBoolean: boolean = true,
-    parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
-    parameterModel: ModelWithString = {
-        \\"prop\\": \\"Hello World!\\"
-    },
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callWithDefaultOptionalParameters(    parameterString,
-    parameterNumber,
-    parameterBoolean,
-    parameterEnum,
-    parameterModel,
-    config
-)).body;
-}
-/**
- * @param parameterStringWithNoDefault This is a string with no default
- * @param parameterOptionalStringWithDefault This is a optional string with default
- * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
- * @param parameterOptionalStringWithNoDefault This is a optional string with no default
- * @param parameterStringWithDefault This is a string with default
- * @param parameterStringWithEmptyDefault This is a string with empty default
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callToTestOrderOfParams(
-    parameterStringWithNoDefault: string,
-    parameterOptionalStringWithDefault: string = 'Hello World!',
-    parameterOptionalStringWithEmptyDefault: string = '',
-    parameterOptionalStringWithNoDefault?: string,
-    parameterStringWithDefault: string = 'Hello World!',
-    parameterStringWithEmptyDefault: string = '',
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callToTestOrderOfParams(    parameterStringWithNoDefault,
-    parameterOptionalStringWithDefault,
-    parameterOptionalStringWithEmptyDefault,
-    parameterOptionalStringWithNoDefault,
-    parameterStringWithDefault,
-    parameterStringWithEmptyDefault,
-    config
-)).body;
-}
+        return (await this.full.callWithDefaultParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
+    }
+
+    /**
+     * @param parameterString This is a simple string that is optional with default value
+     * @param parameterNumber This is a simple number that is optional with default value
+     * @param parameterBoolean This is a simple boolean that is optional with default value
+     * @param parameterEnum This is a simple enum that is optional with default value
+     * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultOptionalParameters(
+        parameterString: string = 'Hello World!',
+        parameterNumber: number = 123,
+        parameterBoolean: boolean = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callWithDefaultOptionalParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
+    }
+
+    /**
+     * @param parameterStringWithNoDefault This is a string with no default
+     * @param parameterOptionalStringWithDefault This is a optional string with default
+     * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
+     * @param parameterOptionalStringWithNoDefault This is a optional string with no default
+     * @param parameterStringWithDefault This is a string with default
+     * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callToTestOrderOfParams(
+        parameterStringWithNoDefault: string,
+        parameterOptionalStringWithDefault: string = 'Hello World!',
+        parameterOptionalStringWithEmptyDefault: string = '',
+        parameterOptionalStringWithNoDefault?: string,
+        parameterStringWithDefault: string = 'Hello World!',
+        parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callToTestOrderOfParams(
+            parameterStringWithNoDefault, parameterOptionalStringWithDefault, parameterOptionalStringWithEmptyDefault, parameterOptionalStringWithNoDefault, parameterStringWithDefault, parameterStringWithEmptyDefault, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -6015,6 +5990,7 @@ export class DuplicateService {
     public async duplicateName(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6022,6 +5998,7 @@ export class DuplicateService {
     public async duplicateName1(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName1(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6029,6 +6006,7 @@ export class DuplicateService {
     public async duplicateName2(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName2(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6036,6 +6014,7 @@ export class DuplicateService {
     public async duplicateName3(config?: ClientConfig): Promise<void> {
         return (await this.full.duplicateName3(config)).body;
     }
+
 }"
 `;
 
@@ -6129,6 +6108,7 @@ export class HeaderService {
     public async callWithResultFromHeader(config?: ClientConfig): Promise<string> {
         return (await this.full.callWithResultFromHeader(config)).body;
     }
+
 }"
 `;
 
@@ -6201,6 +6181,7 @@ export class MultipartService {
     }> {
         return (await this.full.multipartResponse(config)).body;
     }
+
 }"
 `;
 
@@ -6268,6 +6249,7 @@ export class NoContentService {
     public async callWithNoContentResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.callWithNoContentResponse(config)).body;
     }
+
 }"
 `;
 
@@ -6343,84 +6325,73 @@ export class ParametersService {
         requestBody: ModelWithString | null,
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.callWithParameters(    parameterHeader,
-        parameterQuery,
-        parameterForm,
-        parameterCookie,
-        parameterPath,
-        requestBody,
-        config
-    )).body;
-}
-/**
- * @param parameterHeader This is the parameter that goes into the request header
- * @param parameterQuery This is the parameter that goes into the request query params
- * @param parameterForm This is the parameter that goes into the request form data
- * @param parameterCookie This is the parameter that goes into the cookie
- * @param requestBody This is the parameter that goes into the body
- * @param parameterPath1 This is the parameter that goes into the path
- * @param parameterPath2 This is the parameter that goes into the path
- * @param parameterPath3 This is the parameter that goes into the path
- * @param _default This is the parameter with a reserved keyword
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async callWithWeirdParameterNames(
-    parameterHeader: string | null,
-    parameterQuery: string | null,
-    parameterForm: string | null,
-    parameterCookie: string | null,
-    requestBody: ModelWithString | null,
-    parameterPath1?: string,
-    parameterPath2?: string,
-    parameterPath3?: string,
-    _default?: string,
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.callWithWeirdParameterNames(    parameterHeader,
-    parameterQuery,
-    parameterForm,
-    parameterCookie,
-    requestBody,
-    parameterPath1,
-    parameterPath2,
-    parameterPath3,
-    _default,
-    config
-)).body;
-}
-/**
- * @param requestBody This is a required parameter
- * @param parameter This is an optional parameter
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async getCallWithOptionalParam(
-    requestBody: ModelWithString,
-    parameter?: string,
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.getCallWithOptionalParam(    requestBody,
-    parameter,
-    config
-)).body;
-}
-/**
- * @param parameter This is a required parameter
- * @param requestBody This is an optional parameter
- * @param [config] the optional OpenAPI config to use
- * @throws ApiError
- */
-public async postCallWithOptionalParam(
-    parameter: string,
-    requestBody?: ModelWithString,
-    config?: ClientConfig
-): Promise<void> {
-    return (await this.full.postCallWithOptionalParam(    parameter,
-    requestBody,
-    config
-)).body;
-}
+        return (await this.full.callWithParameters(
+            parameterHeader, parameterQuery, parameterForm, parameterCookie, parameterPath, requestBody, config
+        )).body;
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the request header
+     * @param parameterQuery This is the parameter that goes into the request query params
+     * @param parameterForm This is the parameter that goes into the request form data
+     * @param parameterCookie This is the parameter that goes into the cookie
+     * @param requestBody This is the parameter that goes into the body
+     * @param parameterPath1 This is the parameter that goes into the path
+     * @param parameterPath2 This is the parameter that goes into the path
+     * @param parameterPath3 This is the parameter that goes into the path
+     * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithWeirdParameterNames(
+        parameterHeader: string | null,
+        parameterQuery: string | null,
+        parameterForm: string | null,
+        parameterCookie: string | null,
+        requestBody: ModelWithString | null,
+        parameterPath1?: string,
+        parameterPath2?: string,
+        parameterPath3?: string,
+        _default?: string,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callWithWeirdParameterNames(
+            parameterHeader, parameterQuery, parameterForm, parameterCookie, requestBody, parameterPath1, parameterPath2, parameterPath3, _default, config
+        )).body;
+    }
+
+    /**
+     * @param requestBody This is a required parameter
+     * @param parameter This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async getCallWithOptionalParam(
+        requestBody: ModelWithString,
+        parameter?: string,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.getCallWithOptionalParam(
+            requestBody, parameter, config
+        )).body;
+    }
+
+    /**
+     * @param parameter This is a required parameter
+     * @param requestBody This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async postCallWithOptionalParam(
+        parameter: string,
+        requestBody?: ModelWithString,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.postCallWithOptionalParam(
+            parameter, requestBody, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -6606,10 +6577,11 @@ export class RequestBodyService {
         requestBody?: ModelWithString,
         config?: ClientConfig
     ): Promise<void> {
-        return (await this.full.postRequestBodyService(    requestBody,
-        config
-    )).body;
-}
+        return (await this.full.postRequestBodyService(
+            requestBody, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -6684,6 +6656,7 @@ export class ResponseService {
     public async callWithResponse(config?: ClientConfig): Promise<ModelWithString> {
         return (await this.full.callWithResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Message for default response
@@ -6692,6 +6665,7 @@ export class ResponseService {
     public async callWithDuplicateResponses(config?: ClientConfig): Promise<ModelWithString> {
         return (await this.full.callWithDuplicateResponses(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @returns any Message for 200 response
@@ -6707,6 +6681,7 @@ export class ResponseService {
     } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends> {
         return (await this.full.callWithResponses(config)).body;
     }
+
 }"
 `;
 
@@ -6813,6 +6788,7 @@ export class SimpleService {
     public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.getCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6820,6 +6796,7 @@ export class SimpleService {
     public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.putCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6827,6 +6804,7 @@ export class SimpleService {
     public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.postCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6834,6 +6812,7 @@ export class SimpleService {
     public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.deleteCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6841,6 +6820,7 @@ export class SimpleService {
     public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.optionsCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6848,6 +6828,7 @@ export class SimpleService {
     public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.headCallWithoutParametersAndResponse(config)).body;
     }
+
     /**
      * @param [config] the optional OpenAPI config to use
      * @throws ApiError
@@ -6855,6 +6836,7 @@ export class SimpleService {
     public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
         return (await this.full.patchCallWithoutParametersAndResponse(config)).body;
     }
+
 }"
 `;
 
@@ -7000,17 +6982,11 @@ export class TypesService {
         id?: number,
         config?: ClientConfig
     ): Promise<number | string | boolean | any> {
-        return (await this.full.types(    parameterArray,
-        parameterDictionary,
-        parameterEnum,
-        parameterNumber,
-        parameterString,
-        parameterBoolean,
-        parameterObject,
-        id,
-        config
-    )).body;
-}
+        return (await this.full.types(
+            parameterArray, parameterDictionary, parameterEnum, parameterNumber, parameterString, parameterBoolean, parameterObject, id, config
+        )).body;
+    }
+
 }"
 `;
 
@@ -7104,10 +7080,11 @@ export class UploadService {
         file: Blob,
         config?: ClientConfig
     ): Promise<boolean> {
-        return (await this.full.uploadFile(    file,
-        config
-    )).body;
-}
+        return (await this.full.uploadFile(
+            file, config
+        )).body;
+    }
+
 }"
 `;
 

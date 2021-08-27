@@ -4,11 +4,7 @@
 {{#each parameters}}
   {{{name}}},
 {{/each}}
-}{{#if @root.exportClient}}, config{{/if}}
-{{~else}}
-{{#each parameters}}
-    {{{name}}},
-{{/each}}
-{{#if @root.exportClient}}config{{/if}}
+}{{#if @root.exportClient}}, config{{/if}}{{~else}}
+{{#each parameters}}{{{name}}}, {{/each}}{{#if @root.exportClient}}config{{/if}}
 {{/if}}
 {{else}}{{#if @root.exportClient}}config{{/if}}{{/if}}
