@@ -24,7 +24,7 @@ describe('v2.fetch', () => {
         await browser.exposeFunction('tokenRequest', jest.fn().mockResolvedValue('MY_TOKEN'));
         const result = await browser.evaluate(async () => {
             const { OpenAPI, SimpleService } = window.api;
-            OpenAPI.TOKEN = window.tokenRequest;
+            OpenAPI.token = window.tokenRequest;
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
@@ -63,7 +63,7 @@ describe('v2.fetch with client', () => {
         await browser.exposeFunction('tokenRequest', jest.fn().mockResolvedValue('MY_TOKEN'));
         const result = await browser.evaluate(async () => {
             const { AppClient } = window.api;
-            const client = new AppClient({ TOKEN: window.tokenRequest });
+            const client = new AppClient({ token: window.tokenRequest });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Bearer MY_TOKEN');

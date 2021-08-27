@@ -11,11 +11,12 @@
 {{/if}}
 {{{name}}}{{>isRequired}}: {{>type}},
 {{/each}}
-}
+}{{#if @root.exportClient}}, config?: ClientConfig{{/if}}
 {{~else}}
 
 {{#each parameters}}
 {{{name}}}{{>isRequired}}: {{>type}}{{#if default}} = {{{default}}}{{/if}},
 {{/each}}
+{{#if @root.exportClient}}config?: ClientConfig{{/if}}
 {{/if}}
-{{/if}}
+{{else}}{{#if @root.exportClient}}config?: ClientConfig{{/if}}{{/if}}

@@ -4,9 +4,9 @@ export { ApiError } from './ApiError';
 export type { ApiRequestOptions } from './ApiRequestOptions';
 export type { ApiResult } from './ApiResult';
 {{#if @root.exportClient}}
-export { BaseHttpRequest } from './BaseHttpRequest';
+export type { BaseHttpRequest } from './BaseHttpRequest';
 export { {{{httpRequestName}}} } from './{{{httpRequestName}}}';
-export type { OpenAPIConfig } from './OpenAPI';
+export type { ClientConfig } from './OpenAPI';
 {{else}}
 export { OpenAPI } from './OpenAPI';
 export { request } from './request';

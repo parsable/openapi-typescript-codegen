@@ -24,9 +24,9 @@ describe('v3.fetch', () => {
         await browser.exposeFunction('tokenRequest', jest.fn().mockResolvedValue('MY_TOKEN'));
         const result = await browser.evaluate(async () => {
             const { OpenAPI, SimpleService } = window.api;
-            OpenAPI.TOKEN = window.tokenRequest;
-            OpenAPI.USERNAME = undefined;
-            OpenAPI.PASSWORD = undefined;
+            OpenAPI.token = window.tokenRequest;
+            OpenAPI.username = undefined;
+            OpenAPI.password = undefined;
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
@@ -35,9 +35,9 @@ describe('v3.fetch', () => {
     it('uses credentials', async () => {
         const result = await browser.evaluate(async () => {
             const { OpenAPI, SimpleService } = window.api;
-            OpenAPI.TOKEN = undefined;
-            OpenAPI.USERNAME = 'username';
-            OpenAPI.PASSWORD = 'password';
+            OpenAPI.token = undefined;
+            OpenAPI.username = 'username';
+            OpenAPI.password = 'password';
             return await SimpleService.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');
@@ -76,7 +76,7 @@ describe('v3.fetch with client', () => {
         await browser.exposeFunction('tokenRequest', jest.fn().mockResolvedValue('MY_TOKEN'));
         const result = await browser.evaluate(async () => {
             const { AppClient } = window.api;
-            const client = new AppClient({ TOKEN: window.tokenRequest, USERNAME: undefined, PASSWORD: undefined });
+            const client = new AppClient({ token: window.tokenRequest, username: undefined, password: undefined });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Bearer MY_TOKEN');
@@ -85,7 +85,7 @@ describe('v3.fetch with client', () => {
     it('uses credentials', async () => {
         const result = await browser.evaluate(async () => {
             const { AppClient } = window.api;
-            const client = new AppClient({ TOKEN: undefined, USERNAME: 'username', PASSWORD: 'password' });
+            const client = new AppClient({ token: undefined, username: 'username', password: 'password' });
             return await client.simple.getCallWithoutParametersAndResponse();
         });
         expect(result.headers.authorization).toBe('Basic dXNlcm5hbWU6cGFzc3dvcmQ=');

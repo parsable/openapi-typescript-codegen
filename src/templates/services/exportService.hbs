@@ -3,27 +3,25 @@
 {{#if imports}}
 import type {
 {{#each imports}}
- {{{this}}},
+{{{this}}},
 {{/each}}
 } from '../models';
 {{/if}}
 {{#if @root.exportClient}}
-import { BaseHttpRequest } from '../core';
-{{else}}
-import {
-    request as __request,
-{{#if @root.useVersion}}
-    OpenAPI,
+import type { BaseHttpRequest, ClientConfig } from '../core';
 {{/if}}
-} from '../core';
-{{/if}}
+import { {{{name}}}Full } from './{{{name}}}Full';
 
 export class {{{name}}} {
     {{#if @root.exportClient}}
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: {{{name}}}Full;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new {{{name}}}Full(httpRequest, clientConfig);
     }
     {{/if}}
 
@@ -45,61 +43,18 @@ export class {{{name}}} {
     {{/each}}
     {{/if}}
     {{/unless}}
+    {{#if @root.exportClient}}* @param [config] the optional OpenAPI config to use{{/if}}
     {{#each results}}
      * @returns {{{type}}} {{{description}}}
     {{/each}}
     * @throws ApiError
     */
     public{{#unless @root.exportClient}} static{{/unless}} async {{{name}}}({{>parameters}}): Promise<{{>result}}> {
-        const result = await {{#if @root.exportClient}}this.httpRequest.request{{else}}__request{{/if}}({
-            method: '{{{method}}}',
-            path: `{{{path}}}`,
-            {{#if parametersCookie}}
-            cookies: {
-                {{#each parametersCookie}}
-                '{{{prop}}}': {{{name}}},
-                {{/each}}
-            },
-            {{/if}}
-            {{#if parametersHeader}}
-            headers: {
-                {{#each parametersHeader}}
-                '{{{prop}}}': {{{name}}},
-                {{/each}}
-            },
-            {{/if}}
-            {{#if parametersQuery}}
-            query: {
-                {{#each parametersQuery}}
-                '{{{prop}}}': {{{name}}},
-                {{/each}}
-            },
-            {{/if}}
-            {{#if parametersForm}}
-            formData: {
-                {{#each parametersForm}}
-                '{{{prop}}}': {{{name}}},
-                {{/each}}
-            },
-            {{/if}}
-            {{#if parametersBody}}
-            body: {{{parametersBody.name}}},
-            {{#if parametersBody.mediaType}}
-            mediaType: '{{{parametersBody.mediaType}}}',
-            {{/if}}
-            {{/if}}
-            {{#if responseHeader}}
-            responseHeader: '{{{responseHeader}}}',
-            {{/if}}
-            {{#if errors}}
-            errors: {
-                {{#each errors}}
-                {{{code}}}: `{{{description}}}`,
-                {{/each}}
-            },
-            {{/if}}
-        });
-        return result.body;
+    {{#if @root.exportClient}}
+        return (await this.full.{{{name}}}({{>passParameters}})).body;
+    {{else}}
+        return (await {{{@root.name}}}Full.{{{name}}}({{>passParameters}})).body;
+    {{/if}}
     }
 
     {{/each}}

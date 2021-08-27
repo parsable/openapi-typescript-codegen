@@ -5,8 +5,9 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/client
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest, FetchHttpRequest } from './core';
-import type { OpenAPIConfig } from './core';
+import type { BaseHttpRequest } from './core';
+import { FetchHttpRequest } from './core';
+import type { ClientConfig } from './core';
 import {
     CollectionFormatService,
     ComplexService,
@@ -31,28 +32,27 @@ export class TestClient {
     readonly response: ResponseService;
     readonly simple: SimpleService;
     readonly types: TypesService;
-    readonly request: BaseHttpRequest;
 
-    constructor(openApiConfig?: OpenAPIConfig, HttpRequest: new (config: OpenAPIConfig) => BaseHttpRequest = FetchHttpRequest) {
-        this.request = new HttpRequest({
-            BASE: openApiConfig?.BASE ?? 'http://localhost:3000/base',
-            VERSION: openApiConfig?.VERSION ?? '1.0',
-            WITH_CREDENTIALS: openApiConfig?.WITH_CREDENTIALS ?? false,
-            TOKEN: openApiConfig?.TOKEN,
-            USERNAME: openApiConfig?.USERNAME,
-            PASSWORD: openApiConfig?.PASSWORD,
-            HEADERS: openApiConfig?.HEADERS,
-        });
-        this.collectionformat = new CollectionFormatService(this.request);
-        this.complex = new ComplexService(this.request);
-        this.defaults = new DefaultsService(this.request);
-        this.duplicate = new DuplicateService(this.request);
-        this.header = new HeaderService(this.request);
-        this.nocontent = new NoContentService(this.request);
-        this.parameters = new ParametersService(this.request);
-        this.response = new ResponseService(this.request);
-        this.simple = new SimpleService(this.request);
-        this.types = new TypesService(this.request);
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
+        const config = {
+            baseUrl: clientConfig?.baseUrl ?? 'http://localhost:3000/base',
+            version: clientConfig?.version ?? '1.0',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
+        }
+        this.collectionformat = new CollectionFormatService(httpClient, config);
+        this.complex = new ComplexService(httpClient, config);
+        this.defaults = new DefaultsService(httpClient, config);
+        this.duplicate = new DuplicateService(httpClient, config);
+        this.header = new HeaderService(httpClient, config);
+        this.nocontent = new NoContentService(httpClient, config);
+        this.parameters = new ParametersService(httpClient, config);
+        this.response = new ResponseService(httpClient, config);
+        this.simple = new SimpleService(httpClient, config);
+        this.types = new TypesService(httpClient, config);
     }
 }"
 `;
@@ -105,12 +105,12 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/core/A
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type ApiResult = {
+export type ApiResult<T = any> = {
     readonly url: string;
     readonly ok: boolean;
     readonly status: number;
     readonly statusText: string;
-    readonly body: any;
+    readonly body: T;
 }"
 `;
 
@@ -121,18 +121,14 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/core/B
 /* eslint-disable */
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
-import type { OpenAPIConfig } from './OpenAPI';
+import type { ClientConfig } from './OpenAPI';
 
-export class BaseHttpRequest {
-    readonly openApiConfig: OpenAPIConfig;
-
-    constructor(openApiConfig: OpenAPIConfig) {
-        this.openApiConfig = openApiConfig;
-    }
-
-    async request(options: ApiRequestOptions): Promise<ApiResult> {
-        throw new Error('Not Implemented');
-    }
+export interface BaseHttpRequest<T = any> {
+    request<K = T>(
+        options: ApiRequestOptions,
+        config: ClientConfig,
+        mergeConfig?: ClientConfig
+    ): Promise<ApiResult<K>>;
 }"
 `;
 
@@ -144,8 +140,8 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/core/F
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
-import type { OpenAPIConfig } from './OpenAPI';
-import { BaseHttpRequest } from './BaseHttpRequest';
+import type { ClientConfig } from './OpenAPI';
+import type { BaseHttpRequest } from './BaseHttpRequest';
 
 function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | undefined> {
     return value !== undefined && value !== null;
@@ -153,6 +149,26 @@ function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | u
 
 function isString(value: any): value is string {
     return typeof value === 'string';
+}
+
+export function deepAssign(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+): Record<string, unknown> {
+    const keys = Object.keys(source);
+    for (const k of keys) {
+        const sourceValue: unknown = source[k];
+        const targetValue: unknown = target[k];
+        if (Object(sourceValue) === sourceValue && Object(targetValue) === targetValue) {
+            target[k] = deepAssign(
+                targetValue as Record<string, unknown>,
+                sourceValue as Record<string, unknown>,
+            );
+        } else {
+            target[k] = source[k];
+        }
+    }
+    return target;
 }
 
 function isStringWithValue(value: any): value is string {
@@ -183,9 +199,9 @@ function getQueryString(params: Record<string, any>): string {
     return '';
 }
 
-function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
+function getUrl(options: ApiRequestOptions, config: ClientConfig): string {
     const path = options.path.replace(/[:]/g, '_');
-    const url = \`\${config.BASE}\${path}\`;
+    const url = \`\${config.baseUrl}\${path}\`;
 
     if (options.query) {
         return \`\${url}\${getQueryString(options.query)}\`;
@@ -213,11 +229,11 @@ async function resolve<T>(options: ApiRequestOptions, resolver?: T | Resolver<T>
     return resolver;
 }
 
-async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
-    const token = await resolve(options, config.TOKEN);
-    const username = await resolve(options, config.USERNAME);
-    const password = await resolve(options, config.PASSWORD);
-    const defaultHeaders = await resolve(options, config.HEADERS);
+async function getHeaders(options: ApiRequestOptions, config: ClientConfig): Promise<Headers> {
+    const token = await resolve(options, config.token);
+    const username = await resolve(options, config.username);
+    const password = await resolve(options, config.password);
+    const defaultHeaders = await resolve(options, config.headers);
 
     const headers = new Headers({
         Accept: 'application/json',
@@ -264,13 +280,13 @@ function getRequestBody(options: ApiRequestOptions): BodyInit | undefined {
     return undefined;
 }
 
-async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: ClientConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
         headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (config.WITH_CREDENTIALS) {
+    if (config.withCredentials) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
@@ -325,20 +341,19 @@ function catchErrors(options: ApiRequestOptions, result: ApiResult): void {
     }
 }
 
-export class FetchHttpRequest extends BaseHttpRequest {
-    constructor(openApiConfig: OpenAPIConfig) {
-        super(openApiConfig);
-    }
-
+export class FetchHttpRequest implements BaseHttpRequest {
     /**
     * Request using fetch client
     * @param options The request options from the the service
+    * @param config The OpenAPI configuration
+    * @param [mergeConfig] Additional optional OpenAPI configuration that will be merged with the first one
     * @returns ApiResult
     * @throws ApiError
     */
-    async request(options: ApiRequestOptions): Promise<ApiResult> {
-        const url = getUrl(options, this.openApiConfig);
-        const response = await sendRequest(options, this.openApiConfig, url);
+    async request(options: ApiRequestOptions, config: ClientConfig, mergeConfig?: ClientConfig): Promise<ApiResult> {
+        const conf = mergeConfig ? deepAssign(config, mergeConfig) : config;
+        const url = getUrl(options, conf);
+        const response = await sendRequest(options, conf, url);
         const responseBody = await getResponseBody(response);
         const responseHeader = getResponseHeader(response, options.responseHeader);
 
@@ -367,14 +382,14 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
 
-export type OpenAPIConfig = {
-    BASE?: string;
-    VERSION?: string;
-    WITH_CREDENTIALS?: boolean;
-    TOKEN?: string | Resolver<string>;
-    USERNAME?: string | Resolver<string>;
-    PASSWORD?: string | Resolver<string>;
-    HEADERS?: Headers | Resolver<Headers>;
+export type ClientConfig = {
+    baseUrl?: string;
+    version?: string;
+    withCredentials?: boolean;
+    token?: string | Resolver<string>;
+    username?: string | Resolver<string>;
+    password?: string | Resolver<string>;
+    headers?: Headers | Resolver<Headers>;
 }
 "
 `;
@@ -387,9 +402,9 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/core/i
 export { ApiError } from './ApiError';
 export type { ApiRequestOptions } from './ApiRequestOptions';
 export type { ApiResult } from './ApiResult';
-export { BaseHttpRequest } from './BaseHttpRequest';
+export type { BaseHttpRequest } from './BaseHttpRequest';
 export { FetchHttpRequest } from './FetchHttpRequest';
-export type { OpenAPIConfig } from './OpenAPI';
+export type { ClientConfig } from './OpenAPI';
 "
 `;
 
@@ -1953,13 +1968,18 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { CollectionFormatServiceFull } from './CollectionFormatServiceFull';
 
 export class CollectionFormatService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: CollectionFormatServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new CollectionFormatServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -1968,6 +1988,7 @@ export class CollectionFormatService {
      * @param parameterArrayTsv This is an array parameter that is send as tsv format (tab-separated values)
      * @param parameterArrayPipes This is an array parameter that is send as pipes format (pipe-separated values)
      * @param parameterArrayMulti This is an array parameter that is send as multi format (multiple parameter instances)
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async collectionFormat(
@@ -1976,10 +1997,52 @@ export class CollectionFormatService {
         parameterArrayTsv: Array<string>,
         parameterArrayPipes: Array<string>,
         parameterArrayMulti: Array<string>,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.collectionFormat(
+            parameterArrayCsv, parameterArraySsv, parameterArrayTsv, parameterArrayPipes, parameterArrayMulti, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/CollectionFormatServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class CollectionFormatServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterArrayCsv This is an array parameter that is send as csv format (comma-separated values)
+     * @param parameterArraySsv This is an array parameter that is send as ssv format (space-separated values)
+     * @param parameterArrayTsv This is an array parameter that is send as tsv format (tab-separated values)
+     * @param parameterArrayPipes This is an array parameter that is send as pipes format (pipe-separated values)
+     * @param parameterArrayMulti This is an array parameter that is send as multi format (multiple parameter instances)
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async collectionFormat(
+        parameterArrayCsv: Array<string>,
+        parameterArraySsv: Array<string>,
+        parameterArrayTsv: Array<string>,
+        parameterArrayPipes: Array<string>,
+        parameterArrayMulti: Array<string>,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/collectionFormat\`,
+            path: \`/api/v\${this.clientConfig.version}/collectionFormat\`,
             query: {
                 'parameterArrayCSV': parameterArrayCsv,
                 'parameterArraySSV': parameterArraySsv,
@@ -1987,8 +2050,7 @@ export class CollectionFormatService {
                 'parameterArrayPipes': parameterArrayPipes,
                 'parameterArrayMulti': parameterArrayMulti,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2002,18 +2064,24 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 import type {
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ComplexServiceFull } from './ComplexServiceFull';
 
 export class ComplexService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ComplexServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ComplexServiceFull(httpRequest, clientConfig);
     }
 
     /**
      * @param parameterObject Parameter containing object
      * @param parameterReference Parameter containing reference
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Successful response
      * @throws ApiError
      */
@@ -2026,10 +2094,56 @@ export class ComplexService {
             },
         },
         parameterReference: ModelWithString,
+        config?: ClientConfig
     ): Promise<Array<ModelWithString>> {
-        const result = await this.httpRequest.request({
+        return (await this.full.complexTypes(
+            parameterObject, parameterReference, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/ComplexServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ComplexServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterObject Parameter containing object
+     * @param parameterReference Parameter containing reference
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Successful response
+     * @throws ApiError
+     */
+    public async complexTypes(
+        parameterObject: {
+            first?: {
+                second?: {
+                    third?: string,
+                },
+            },
+        },
+        parameterReference: ModelWithString,
+        config?: ClientConfig
+    ): Promise<ApiResult<Array<ModelWithString>>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/complex\`,
+            path: \`/api/v\${this.clientConfig.version}/complex\`,
             query: {
                 'parameterObject': parameterObject,
                 'parameterReference': parameterReference,
@@ -2038,8 +2152,7 @@ export class ComplexService {
                 400: \`400 server error\`,
                 500: \`500 server error\`,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2053,13 +2166,18 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 import type {
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { DefaultsServiceFull } from './DefaultsServiceFull';
 
 export class DefaultsService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: DefaultsServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new DefaultsServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -2068,6 +2186,7 @@ export class DefaultsService {
      * @param parameterBoolean This is a simple boolean with default value
      * @param parameterEnum This is a simple enum with default value
      * @param parameterModel This is a simple model with default value
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithDefaultParameters(
@@ -2078,19 +2197,11 @@ export class DefaultsService {
         parameterModel: ModelWithString = {
             \\"prop\\": \\"Hello World!\\"
         },
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
-            query: {
-                'parameterString': parameterString,
-                'parameterNumber': parameterNumber,
-                'parameterBoolean': parameterBoolean,
-                'parameterEnum': parameterEnum,
-                'parameterModel': parameterModel,
-            },
-        });
-        return result.body;
+        return (await this.full.callWithDefaultParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
     }
 
     /**
@@ -2099,6 +2210,7 @@ export class DefaultsService {
      * @param parameterBoolean This is a simple boolean that is optional with default value
      * @param parameterEnum This is a simple enum that is optional with default value
      * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithDefaultOptionalParameters(
@@ -2109,19 +2221,11 @@ export class DefaultsService {
         parameterModel: ModelWithString = {
             \\"prop\\": \\"Hello World!\\"
         },
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
-            method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
-            query: {
-                'parameterString': parameterString,
-                'parameterNumber': parameterNumber,
-                'parameterBoolean': parameterBoolean,
-                'parameterEnum': parameterEnum,
-                'parameterModel': parameterModel,
-            },
-        });
-        return result.body;
+        return (await this.full.callWithDefaultOptionalParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
     }
 
     /**
@@ -2131,6 +2235,7 @@ export class DefaultsService {
      * @param parameterOptionalStringWithNoDefault This is a optional string with no default
      * @param parameterStringWithDefault This is a string with default
      * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callToTestOrderOfParams(
@@ -2140,10 +2245,121 @@ export class DefaultsService {
         parameterOptionalStringWithNoDefault?: string,
         parameterStringWithDefault: string = 'Hello World!',
         parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.callToTestOrderOfParams(
+            parameterStringWithNoDefault, parameterOptionalStringWithDefault, parameterOptionalStringWithEmptyDefault, parameterOptionalStringWithNoDefault, parameterStringWithDefault, parameterStringWithEmptyDefault, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/DefaultsServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class DefaultsServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterString This is a simple string with default value
+     * @param parameterNumber This is a simple number with default value
+     * @param parameterBoolean This is a simple boolean with default value
+     * @param parameterEnum This is a simple enum with default value
+     * @param parameterModel This is a simple model with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultParameters(
+        parameterString: string = 'Hello World!',
+        parameterNumber: number = 123,
+        parameterBoolean: boolean = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
+            query: {
+                'parameterString': parameterString,
+                'parameterNumber': parameterNumber,
+                'parameterBoolean': parameterBoolean,
+                'parameterEnum': parameterEnum,
+                'parameterModel': parameterModel,
+            },
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param parameterString This is a simple string that is optional with default value
+     * @param parameterNumber This is a simple number that is optional with default value
+     * @param parameterBoolean This is a simple boolean that is optional with default value
+     * @param parameterEnum This is a simple enum that is optional with default value
+     * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultOptionalParameters(
+        parameterString: string = 'Hello World!',
+        parameterNumber: number = 123,
+        parameterBoolean: boolean = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
+            method: 'POST',
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
+            query: {
+                'parameterString': parameterString,
+                'parameterNumber': parameterNumber,
+                'parameterBoolean': parameterBoolean,
+                'parameterEnum': parameterEnum,
+                'parameterModel': parameterModel,
+            },
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param parameterStringWithNoDefault This is a string with no default
+     * @param parameterOptionalStringWithDefault This is a optional string with default
+     * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
+     * @param parameterOptionalStringWithNoDefault This is a optional string with no default
+     * @param parameterStringWithDefault This is a string with default
+     * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callToTestOrderOfParams(
+        parameterStringWithNoDefault: string,
+        parameterOptionalStringWithDefault: string = 'Hello World!',
+        parameterOptionalStringWithEmptyDefault: string = '',
+        parameterOptionalStringWithNoDefault?: string,
+        parameterStringWithDefault: string = 'Hello World!',
+        parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
             query: {
                 'parameterStringWithNoDefault': parameterStringWithNoDefault,
                 'parameterOptionalStringWithDefault': parameterOptionalStringWithDefault,
@@ -2152,8 +2368,7 @@ export class DefaultsService {
                 'parameterStringWithDefault': parameterStringWithDefault,
                 'parameterStringWithEmptyDefault': parameterStringWithEmptyDefault,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2164,57 +2379,113 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { DuplicateServiceFull } from './DuplicateServiceFull';
 
 export class DuplicateService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: DuplicateServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new DuplicateServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName1(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName1(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName2(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName2(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName3(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName3(config)).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/DuplicateServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class DuplicateServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName1(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName1(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName2(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName2(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName3(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName3(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'DELETE',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2225,30 +2496,63 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { HeaderServiceFull } from './HeaderServiceFull';
 
 export class HeaderService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: HeaderServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new HeaderServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns string Successful response
      * @throws ApiError
      */
-    public async callWithResultFromHeader(): Promise<string> {
-        const result = await this.httpRequest.request({
+    public async callWithResultFromHeader(config?: ClientConfig): Promise<string> {
+        return (await this.full.callWithResultFromHeader(config)).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/HeaderServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class HeaderServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns string Successful response
+     * @throws ApiError
+     */
+    public async callWithResultFromHeader(config?: ClientConfig): Promise<ApiResult<string>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/header\`,
+            path: \`/api/v\${this.clientConfig.version}/header\`,
             responseHeader: 'operation-location',
             errors: {
                 400: \`400 server error\`,
                 500: \`500 server error\`,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2259,25 +2563,58 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { NoContentServiceFull } from './NoContentServiceFull';
 
 export class NoContentService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: NoContentServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new NoContentServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns void
      * @throws ApiError
      */
-    public async callWithNoContentResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async callWithNoContentResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.callWithNoContentResponse(config)).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/NoContentServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class NoContentServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns void
+     * @throws ApiError
+     */
+    public async callWithNoContentResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/no-content\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/no-content\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2288,13 +2625,18 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ParametersServiceFull } from './ParametersServiceFull';
 
 export class ParametersService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ParametersServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ParametersServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -2303,6 +2645,7 @@ export class ParametersService {
      * @param parameterForm This is the parameter that goes into the form data
      * @param parameterBody This is the parameter that is send as request body
      * @param parameterPath This is the parameter that goes into the path
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithParameters(
@@ -2311,22 +2654,11 @@ export class ParametersService {
         parameterForm: string,
         parameterBody: string,
         parameterPath: string,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\${parameterPath}\`,
-            headers: {
-                'parameterHeader': parameterHeader,
-            },
-            query: {
-                'parameterQuery': parameterQuery,
-            },
-            formData: {
-                'parameterForm': parameterForm,
-            },
-            body: parameterBody,
-        });
-        return result.body;
+        return (await this.full.callWithParameters(
+            parameterHeader, parameterQuery, parameterForm, parameterBody, parameterPath, config
+        )).body;
     }
 
     /**
@@ -2338,6 +2670,7 @@ export class ParametersService {
      * @param parameterPath2 This is the parameter that goes into the path
      * @param parameterPath3 This is the parameter that goes into the path
      * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithWeirdParameterNames(
@@ -2349,10 +2682,91 @@ export class ParametersService {
         parameterPath2?: string,
         parameterPath3?: string,
         _default?: string,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.callWithWeirdParameterNames(
+            parameterHeader, parameterQuery, parameterForm, parameterBody, parameterPath1, parameterPath2, parameterPath3, _default, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/ParametersServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ParametersServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the header
+     * @param parameterQuery This is the parameter that goes into the query params
+     * @param parameterForm This is the parameter that goes into the form data
+     * @param parameterBody This is the parameter that is send as request body
+     * @param parameterPath This is the parameter that goes into the path
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithParameters(
+        parameterHeader: string,
+        parameterQuery: string,
+        parameterForm: string,
+        parameterBody: string,
+        parameterPath: string,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\${parameterPath1}/\${parameterPath2}/\${parameterPath3}\`,
+            path: \`/api/v\${this.clientConfig.version}/parameters/\${parameterPath}\`,
+            headers: {
+                'parameterHeader': parameterHeader,
+            },
+            query: {
+                'parameterQuery': parameterQuery,
+            },
+            formData: {
+                'parameterForm': parameterForm,
+            },
+            body: parameterBody,
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the request header
+     * @param parameterQuery This is the parameter that goes into the request query params
+     * @param parameterForm This is the parameter that goes into the request form data
+     * @param parameterBody This is the parameter that is send as request body
+     * @param parameterPath1 This is the parameter that goes into the path
+     * @param parameterPath2 This is the parameter that goes into the path
+     * @param parameterPath3 This is the parameter that goes into the path
+     * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithWeirdParameterNames(
+        parameterHeader: string,
+        parameterQuery: string,
+        parameterForm: string,
+        parameterBody: string,
+        parameterPath1?: string,
+        parameterPath2?: string,
+        parameterPath3?: string,
+        _default?: string,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/parameters/\${parameterPath1}/\${parameterPath2}/\${parameterPath3}\`,
             headers: {
                 'parameter.header': parameterHeader,
             },
@@ -2364,8 +2778,7 @@ export class ParametersService {
                 'parameter_form': parameterForm,
             },
             body: parameterBody,
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2381,66 +2794,129 @@ import type {
     ModelThatExtendsExtends,
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ResponseServiceFull } from './ResponseServiceFull';
 
 export class ResponseService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ResponseServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ResponseServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Message for default response
      * @throws ApiError
      */
-    public async callWithResponse(): Promise<ModelWithString> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
-        });
-        return result.body;
+    public async callWithResponse(config?: ClientConfig): Promise<ModelWithString> {
+        return (await this.full.callWithResponse(config)).body;
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Message for default response
      * @throws ApiError
      */
-    public async callWithDuplicateResponses(): Promise<ModelWithString> {
-        const result = await this.httpRequest.request({
-            method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
-            errors: {
-                500: \`Message for 500 error\`,
-                501: \`Message for 501 error\`,
-                502: \`Message for 502 error\`,
-            },
-        });
-        return result.body;
+    public async callWithDuplicateResponses(config?: ClientConfig): Promise<ModelWithString> {
+        return (await this.full.callWithDuplicateResponses(config)).body;
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns any Message for 200 response
      * @returns ModelWithString Message for default response
      * @returns ModelThatExtends Message for 201 response
      * @returns ModelThatExtendsExtends Message for 202 response
      * @throws ApiError
      */
-    public async callWithResponses(): Promise<{
+    public async callWithResponses(config?: ClientConfig): Promise<{
         readonly '@namespace.string'?: string,
         readonly '@namespace.integer'?: number,
         readonly value?: Array<ModelWithString>,
     } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends> {
-        const result = await this.httpRequest.request({
-            method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
+        return (await this.full.callWithResponses(config)).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/ResponseServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelThatExtends,
+    ModelThatExtendsExtends,
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ResponseServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Message for default response
+     * @throws ApiError
+     */
+    public async callWithResponse(config?: ClientConfig): Promise<ApiResult<ModelWithString>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Message for default response
+     * @throws ApiError
+     */
+    public async callWithDuplicateResponses(config?: ClientConfig): Promise<ApiResult<ModelWithString>> {
+        return this.httpRequest.request({
+            method: 'POST',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
             errors: {
                 500: \`Message for 500 error\`,
                 501: \`Message for 501 error\`,
                 502: \`Message for 502 error\`,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns any Message for 200 response
+     * @returns ModelWithString Message for default response
+     * @returns ModelThatExtends Message for 201 response
+     * @returns ModelThatExtendsExtends Message for 202 response
+     * @throws ApiError
+     */
+    public async callWithResponses(config?: ClientConfig): Promise<ApiResult<{
+        readonly '@namespace.string'?: string,
+        readonly '@namespace.integer'?: number,
+        readonly value?: Array<ModelWithString>,
+    } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends>> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
+            errors: {
+                500: \`Message for 500 error\`,
+                501: \`Message for 501 error\`,
+                502: \`Message for 502 error\`,
+            },
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2451,90 +2927,170 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { SimpleServiceFull } from './SimpleServiceFull';
 
 export class SimpleService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: SimpleServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new SimpleServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async getCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.getCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.putCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.postCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.deleteCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.optionsCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.headCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.patchCallWithoutParametersAndResponse(config)).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/SimpleServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class SimpleServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async putCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async postCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async deleteCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'DELETE',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async optionsCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'OPTIONS',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async headCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'HEAD',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async patchCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PATCH',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2545,13 +3101,18 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { TypesServiceFull } from './TypesServiceFull';
 
 export class TypesService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: TypesServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new TypesServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -2563,6 +3124,7 @@ export class TypesService {
      * @param parameterBoolean This is a boolean parameter
      * @param parameterObject This is an object parameter
      * @param id This is a number parameter
+     * @param [config] the optional OpenAPI config to use
      * @returns number Response is a simple number
      * @returns string Response is a simple string
      * @returns boolean Response is a simple boolean
@@ -2578,10 +3140,62 @@ export class TypesService {
         parameterBoolean: boolean = true,
         parameterObject: any = null,
         id?: number,
+        config?: ClientConfig
     ): Promise<number | string | boolean | any> {
-        const result = await this.httpRequest.request({
+        return (await this.full.types(
+            parameterArray, parameterDictionary, parameterEnum, parameterNumber, parameterString, parameterBoolean, parameterObject, id, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v2 should generate with exportClient: ./test/generated/v2_client/services/TypesServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class TypesServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterArray This is an array parameter
+     * @param parameterDictionary This is a dictionary parameter
+     * @param parameterEnum This is an enum parameter
+     * @param parameterNumber This is a number parameter
+     * @param parameterString This is a string parameter
+     * @param parameterBoolean This is a boolean parameter
+     * @param parameterObject This is an object parameter
+     * @param id This is a number parameter
+     * @param [config] the optional OpenAPI config to use
+     * @returns number Response is a simple number
+     * @returns string Response is a simple string
+     * @returns boolean Response is a simple boolean
+     * @returns any Response is a simple object
+     * @throws ApiError
+     */
+    public async types(
+        parameterArray: Array<string>,
+        parameterDictionary: Record<string, string>,
+        parameterEnum: 'Success' | 'Warning' | 'Error',
+        parameterNumber: number = 123,
+        parameterString: string = 'default',
+        parameterBoolean: boolean = true,
+        parameterObject: any = null,
+        id?: number,
+        config?: ClientConfig
+    ): Promise<ApiResult<number | string | boolean | any>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/types\`,
+            path: \`/api/v\${this.clientConfig.version}/types\`,
             query: {
                 'parameterArray': parameterArray,
                 'parameterDictionary': parameterDictionary,
@@ -2591,8 +3205,7 @@ export class TypesService {
                 'parameterBoolean': parameterBoolean,
                 'parameterObject': parameterObject,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -2604,15 +3217,25 @@ exports[`v2 should generate with exportClient: ./test/generated/v2_client/servic
 /* tslint:disable */
 /* eslint-disable */
 export { CollectionFormatService } from './CollectionFormatService';
+export { CollectionFormatServiceFull } from './CollectionFormatServiceFull';
 export { ComplexService } from './ComplexService';
+export { ComplexServiceFull } from './ComplexServiceFull';
 export { DefaultsService } from './DefaultsService';
+export { DefaultsServiceFull } from './DefaultsServiceFull';
 export { DuplicateService } from './DuplicateService';
+export { DuplicateServiceFull } from './DuplicateServiceFull';
 export { HeaderService } from './HeaderService';
+export { HeaderServiceFull } from './HeaderServiceFull';
 export { NoContentService } from './NoContentService';
+export { NoContentServiceFull } from './NoContentServiceFull';
 export { ParametersService } from './ParametersService';
+export { ParametersServiceFull } from './ParametersServiceFull';
 export { ResponseService } from './ResponseService';
+export { ResponseServiceFull } from './ResponseServiceFull';
 export { SimpleService } from './SimpleService';
+export { SimpleServiceFull } from './SimpleServiceFull';
 export { TypesService } from './TypesService';
+export { TypesServiceFull } from './TypesServiceFull';
 "
 `;
 
@@ -2621,8 +3244,9 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/client
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest, FetchHttpRequest } from './core';
-import type { OpenAPIConfig } from './core';
+import type { BaseHttpRequest } from './core';
+import { FetchHttpRequest } from './core';
+import type { ClientConfig } from './core';
 import {
     CollectionFormatService,
     ComplexService,
@@ -2653,31 +3277,30 @@ export class TestClient {
     readonly simple: SimpleService;
     readonly types: TypesService;
     readonly upload: UploadService;
-    readonly request: BaseHttpRequest;
 
-    constructor(openApiConfig?: OpenAPIConfig, HttpRequest: new (config: OpenAPIConfig) => BaseHttpRequest = FetchHttpRequest) {
-        this.request = new HttpRequest({
-            BASE: openApiConfig?.BASE ?? 'http://localhost:3000/base',
-            VERSION: openApiConfig?.VERSION ?? '1.0',
-            WITH_CREDENTIALS: openApiConfig?.WITH_CREDENTIALS ?? false,
-            TOKEN: openApiConfig?.TOKEN,
-            USERNAME: openApiConfig?.USERNAME,
-            PASSWORD: openApiConfig?.PASSWORD,
-            HEADERS: openApiConfig?.HEADERS,
-        });
-        this.collectionformat = new CollectionFormatService(this.request);
-        this.complex = new ComplexService(this.request);
-        this.defaults = new DefaultsService(this.request);
-        this.duplicate = new DuplicateService(this.request);
-        this.header = new HeaderService(this.request);
-        this.multipart = new MultipartService(this.request);
-        this.nocontent = new NoContentService(this.request);
-        this.parameters = new ParametersService(this.request);
-        this.requestbody = new RequestBodyService(this.request);
-        this.response = new ResponseService(this.request);
-        this.simple = new SimpleService(this.request);
-        this.types = new TypesService(this.request);
-        this.upload = new UploadService(this.request);
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new FetchHttpRequest()) {
+        const config = {
+            baseUrl: clientConfig?.baseUrl ?? 'http://localhost:3000/base',
+            version: clientConfig?.version ?? '1.0',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
+        }
+        this.collectionformat = new CollectionFormatService(httpClient, config);
+        this.complex = new ComplexService(httpClient, config);
+        this.defaults = new DefaultsService(httpClient, config);
+        this.duplicate = new DuplicateService(httpClient, config);
+        this.header = new HeaderService(httpClient, config);
+        this.multipart = new MultipartService(httpClient, config);
+        this.nocontent = new NoContentService(httpClient, config);
+        this.parameters = new ParametersService(httpClient, config);
+        this.requestbody = new RequestBodyService(httpClient, config);
+        this.response = new ResponseService(httpClient, config);
+        this.simple = new SimpleService(httpClient, config);
+        this.types = new TypesService(httpClient, config);
+        this.upload = new UploadService(httpClient, config);
     }
 }"
 `;
@@ -2730,12 +3353,12 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/core/A
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type ApiResult = {
+export type ApiResult<T = any> = {
     readonly url: string;
     readonly ok: boolean;
     readonly status: number;
     readonly statusText: string;
-    readonly body: any;
+    readonly body: T;
 }"
 `;
 
@@ -2746,18 +3369,14 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/core/B
 /* eslint-disable */
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
-import type { OpenAPIConfig } from './OpenAPI';
+import type { ClientConfig } from './OpenAPI';
 
-export class BaseHttpRequest {
-    readonly openApiConfig: OpenAPIConfig;
-
-    constructor(openApiConfig: OpenAPIConfig) {
-        this.openApiConfig = openApiConfig;
-    }
-
-    async request(options: ApiRequestOptions): Promise<ApiResult> {
-        throw new Error('Not Implemented');
-    }
+export interface BaseHttpRequest<T = any> {
+    request<K = T>(
+        options: ApiRequestOptions,
+        config: ClientConfig,
+        mergeConfig?: ClientConfig
+    ): Promise<ApiResult<K>>;
 }"
 `;
 
@@ -2769,8 +3388,8 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/core/F
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
-import type { OpenAPIConfig } from './OpenAPI';
-import { BaseHttpRequest } from './BaseHttpRequest';
+import type { ClientConfig } from './OpenAPI';
+import type { BaseHttpRequest } from './BaseHttpRequest';
 
 function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | undefined> {
     return value !== undefined && value !== null;
@@ -2778,6 +3397,26 @@ function isDefined<T>(value: T | null | undefined): value is Exclude<T, null | u
 
 function isString(value: any): value is string {
     return typeof value === 'string';
+}
+
+export function deepAssign(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+): Record<string, unknown> {
+    const keys = Object.keys(source);
+    for (const k of keys) {
+        const sourceValue: unknown = source[k];
+        const targetValue: unknown = target[k];
+        if (Object(sourceValue) === sourceValue && Object(targetValue) === targetValue) {
+            target[k] = deepAssign(
+                targetValue as Record<string, unknown>,
+                sourceValue as Record<string, unknown>,
+            );
+        } else {
+            target[k] = source[k];
+        }
+    }
+    return target;
 }
 
 function isStringWithValue(value: any): value is string {
@@ -2808,9 +3447,9 @@ function getQueryString(params: Record<string, any>): string {
     return '';
 }
 
-function getUrl(options: ApiRequestOptions, config: OpenAPIConfig): string {
+function getUrl(options: ApiRequestOptions, config: ClientConfig): string {
     const path = options.path.replace(/[:]/g, '_');
-    const url = \`\${config.BASE}\${path}\`;
+    const url = \`\${config.baseUrl}\${path}\`;
 
     if (options.query) {
         return \`\${url}\${getQueryString(options.query)}\`;
@@ -2838,11 +3477,11 @@ async function resolve<T>(options: ApiRequestOptions, resolver?: T | Resolver<T>
     return resolver;
 }
 
-async function getHeaders(options: ApiRequestOptions, config: OpenAPIConfig): Promise<Headers> {
-    const token = await resolve(options, config.TOKEN);
-    const username = await resolve(options, config.USERNAME);
-    const password = await resolve(options, config.PASSWORD);
-    const defaultHeaders = await resolve(options, config.HEADERS);
+async function getHeaders(options: ApiRequestOptions, config: ClientConfig): Promise<Headers> {
+    const token = await resolve(options, config.token);
+    const username = await resolve(options, config.username);
+    const password = await resolve(options, config.password);
+    const defaultHeaders = await resolve(options, config.headers);
 
     const headers = new Headers({
         Accept: 'application/json',
@@ -2889,13 +3528,13 @@ function getRequestBody(options: ApiRequestOptions): BodyInit | undefined {
     return undefined;
 }
 
-async function sendRequest(options: ApiRequestOptions, config: OpenAPIConfig, url: string): Promise<Response> {
+async function sendRequest(options: ApiRequestOptions, config: ClientConfig, url: string): Promise<Response> {
     const request: RequestInit = {
         method: options.method,
         headers: await getHeaders(options, config),
         body: getRequestBody(options),
     };
-    if (config.WITH_CREDENTIALS) {
+    if (config.withCredentials) {
         request.credentials = 'include';
     }
     return await fetch(url, request);
@@ -2950,20 +3589,19 @@ function catchErrors(options: ApiRequestOptions, result: ApiResult): void {
     }
 }
 
-export class FetchHttpRequest extends BaseHttpRequest {
-    constructor(openApiConfig: OpenAPIConfig) {
-        super(openApiConfig);
-    }
-
+export class FetchHttpRequest implements BaseHttpRequest {
     /**
     * Request using fetch client
     * @param options The request options from the the service
+    * @param config The OpenAPI configuration
+    * @param [mergeConfig] Additional optional OpenAPI configuration that will be merged with the first one
     * @returns ApiResult
     * @throws ApiError
     */
-    async request(options: ApiRequestOptions): Promise<ApiResult> {
-        const url = getUrl(options, this.openApiConfig);
-        const response = await sendRequest(options, this.openApiConfig, url);
+    async request(options: ApiRequestOptions, config: ClientConfig, mergeConfig?: ClientConfig): Promise<ApiResult> {
+        const conf = mergeConfig ? deepAssign(config, mergeConfig) : config;
+        const url = getUrl(options, conf);
+        const response = await sendRequest(options, conf, url);
         const responseBody = await getResponseBody(response);
         const responseHeader = getResponseHeader(response, options.responseHeader);
 
@@ -2992,14 +3630,14 @@ import type { ApiRequestOptions } from './ApiRequestOptions';
 type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
 type Headers = Record<string, string>;
 
-export type OpenAPIConfig = {
-    BASE?: string;
-    VERSION?: string;
-    WITH_CREDENTIALS?: boolean;
-    TOKEN?: string | Resolver<string>;
-    USERNAME?: string | Resolver<string>;
-    PASSWORD?: string | Resolver<string>;
-    HEADERS?: Headers | Resolver<Headers>;
+export type ClientConfig = {
+    baseUrl?: string;
+    version?: string;
+    withCredentials?: boolean;
+    token?: string | Resolver<string>;
+    username?: string | Resolver<string>;
+    password?: string | Resolver<string>;
+    headers?: Headers | Resolver<Headers>;
 }
 "
 `;
@@ -3012,9 +3650,9 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/core/i
 export { ApiError } from './ApiError';
 export type { ApiRequestOptions } from './ApiRequestOptions';
 export type { ApiResult } from './ApiResult';
-export { BaseHttpRequest } from './BaseHttpRequest';
+export type { BaseHttpRequest } from './BaseHttpRequest';
 export { FetchHttpRequest } from './FetchHttpRequest';
-export type { OpenAPIConfig } from './OpenAPI';
+export type { ClientConfig } from './OpenAPI';
 "
 `;
 
@@ -4853,13 +5491,18 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { CollectionFormatServiceFull } from './CollectionFormatServiceFull';
 
 export class CollectionFormatService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: CollectionFormatServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new CollectionFormatServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -4868,6 +5511,7 @@ export class CollectionFormatService {
      * @param parameterArrayTsv This is an array parameter that is send as tsv format (tab-separated values)
      * @param parameterArrayPipes This is an array parameter that is send as pipes format (pipe-separated values)
      * @param parameterArrayMulti This is an array parameter that is send as multi format (multiple parameter instances)
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async collectionFormat(
@@ -4876,10 +5520,52 @@ export class CollectionFormatService {
         parameterArrayTsv: Array<string> | null,
         parameterArrayPipes: Array<string> | null,
         parameterArrayMulti: Array<string> | null,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.collectionFormat(
+            parameterArrayCsv, parameterArraySsv, parameterArrayTsv, parameterArrayPipes, parameterArrayMulti, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/CollectionFormatServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class CollectionFormatServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterArrayCsv This is an array parameter that is send as csv format (comma-separated values)
+     * @param parameterArraySsv This is an array parameter that is send as ssv format (space-separated values)
+     * @param parameterArrayTsv This is an array parameter that is send as tsv format (tab-separated values)
+     * @param parameterArrayPipes This is an array parameter that is send as pipes format (pipe-separated values)
+     * @param parameterArrayMulti This is an array parameter that is send as multi format (multiple parameter instances)
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async collectionFormat(
+        parameterArrayCsv: Array<string> | null,
+        parameterArraySsv: Array<string> | null,
+        parameterArrayTsv: Array<string> | null,
+        parameterArrayPipes: Array<string> | null,
+        parameterArrayMulti: Array<string> | null,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/collectionFormat\`,
+            path: \`/api/v\${this.clientConfig.version}/collectionFormat\`,
             query: {
                 'parameterArrayCSV': parameterArrayCsv,
                 'parameterArraySSV': parameterArraySsv,
@@ -4887,8 +5573,7 @@ export class CollectionFormatService {
                 'parameterArrayPipes': parameterArrayPipes,
                 'parameterArrayMulti': parameterArrayMulti,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -4905,18 +5590,24 @@ import type {
     ModelWithEnum,
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ComplexServiceFull } from './ComplexServiceFull';
 
 export class ComplexService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ComplexServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ComplexServiceFull(httpRequest, clientConfig);
     }
 
     /**
      * @param parameterObject Parameter containing object
      * @param parameterReference Parameter containing reference
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Successful response
      * @throws ApiError
      */
@@ -4929,25 +5620,17 @@ export class ComplexService {
             },
         },
         parameterReference: ModelWithString,
+        config?: ClientConfig
     ): Promise<Array<ModelWithString>> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/complex\`,
-            query: {
-                'parameterObject': parameterObject,
-                'parameterReference': parameterReference,
-            },
-            errors: {
-                400: \`400 server error\`,
-                500: \`500 server error\`,
-            },
-        });
-        return result.body;
+        return (await this.full.complexTypes(
+            parameterObject, parameterReference, config
+        )).body;
     }
 
     /**
      * @param id
      * @param requestBody
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Success
      * @throws ApiError
      */
@@ -4966,14 +5649,100 @@ export class ComplexService {
                 readonly name?: string | null,
             },
         },
+        config?: ClientConfig
     ): Promise<ModelWithString> {
-        const result = await this.httpRequest.request({
+        return (await this.full.complexParams(
+            id, requestBody, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/ComplexServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithArray,
+    ModelWithDictionary,
+    ModelWithEnum,
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ComplexServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterObject Parameter containing object
+     * @param parameterReference Parameter containing reference
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Successful response
+     * @throws ApiError
+     */
+    public async complexTypes(
+        parameterObject: {
+            first?: {
+                second?: {
+                    third?: string,
+                },
+            },
+        },
+        parameterReference: ModelWithString,
+        config?: ClientConfig
+    ): Promise<ApiResult<Array<ModelWithString>>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/complex\`,
+            query: {
+                'parameterObject': parameterObject,
+                'parameterReference': parameterReference,
+            },
+            errors: {
+                400: \`400 server error\`,
+                500: \`500 server error\`,
+            },
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param id
+     * @param requestBody
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Success
+     * @throws ApiError
+     */
+    public async complexParams(
+        id: number,
+        requestBody?: {
+            readonly key: string | null,
+            name: string | null,
+            enabled: boolean,
+            readonly type: 'Monkey' | 'Horse' | 'Bird',
+            listOfModels?: Array<ModelWithString> | null,
+            listOfStrings?: Array<string> | null,
+            parameters: (ModelWithString | ModelWithEnum | ModelWithArray | ModelWithDictionary),
+            readonly user?: {
+                readonly id?: number,
+                readonly name?: string | null,
+            },
+        },
+        config?: ClientConfig
+    ): Promise<ApiResult<ModelWithString>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/complex/\${id}\`,
+            path: \`/api/v\${this.clientConfig.version}/complex/\${id}\`,
             body: requestBody,
             mediaType: 'application/json-patch+json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -4987,13 +5756,18 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 import type {
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { DefaultsServiceFull } from './DefaultsServiceFull';
 
 export class DefaultsService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: DefaultsServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new DefaultsServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -5002,6 +5776,7 @@ export class DefaultsService {
      * @param parameterBoolean This is a simple boolean with default value
      * @param parameterEnum This is a simple enum with default value
      * @param parameterModel This is a simple model with default value
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithDefaultParameters(
@@ -5012,19 +5787,11 @@ export class DefaultsService {
         parameterModel: ModelWithString | null = {
             \\"prop\\": \\"Hello World!\\"
         },
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
-            query: {
-                'parameterString': parameterString,
-                'parameterNumber': parameterNumber,
-                'parameterBoolean': parameterBoolean,
-                'parameterEnum': parameterEnum,
-                'parameterModel': parameterModel,
-            },
-        });
-        return result.body;
+        return (await this.full.callWithDefaultParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
     }
 
     /**
@@ -5033,6 +5800,7 @@ export class DefaultsService {
      * @param parameterBoolean This is a simple boolean that is optional with default value
      * @param parameterEnum This is a simple enum that is optional with default value
      * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithDefaultOptionalParameters(
@@ -5043,19 +5811,11 @@ export class DefaultsService {
         parameterModel: ModelWithString = {
             \\"prop\\": \\"Hello World!\\"
         },
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
-            method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
-            query: {
-                'parameterString': parameterString,
-                'parameterNumber': parameterNumber,
-                'parameterBoolean': parameterBoolean,
-                'parameterEnum': parameterEnum,
-                'parameterModel': parameterModel,
-            },
-        });
-        return result.body;
+        return (await this.full.callWithDefaultOptionalParameters(
+            parameterString, parameterNumber, parameterBoolean, parameterEnum, parameterModel, config
+        )).body;
     }
 
     /**
@@ -5065,6 +5825,7 @@ export class DefaultsService {
      * @param parameterOptionalStringWithNoDefault This is a optional string with no default
      * @param parameterStringWithDefault This is a string with default
      * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callToTestOrderOfParams(
@@ -5074,10 +5835,121 @@ export class DefaultsService {
         parameterOptionalStringWithNoDefault?: string,
         parameterStringWithDefault: string = 'Hello World!',
         parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.callToTestOrderOfParams(
+            parameterStringWithNoDefault, parameterOptionalStringWithDefault, parameterOptionalStringWithEmptyDefault, parameterOptionalStringWithNoDefault, parameterStringWithDefault, parameterStringWithEmptyDefault, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/DefaultsServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class DefaultsServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterString This is a simple string with default value
+     * @param parameterNumber This is a simple number with default value
+     * @param parameterBoolean This is a simple boolean with default value
+     * @param parameterEnum This is a simple enum with default value
+     * @param parameterModel This is a simple model with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultParameters(
+        parameterString: string | null = 'Hello World!',
+        parameterNumber: number | null = 123,
+        parameterBoolean: boolean | null = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString | null = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
+            query: {
+                'parameterString': parameterString,
+                'parameterNumber': parameterNumber,
+                'parameterBoolean': parameterBoolean,
+                'parameterEnum': parameterEnum,
+                'parameterModel': parameterModel,
+            },
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param parameterString This is a simple string that is optional with default value
+     * @param parameterNumber This is a simple number that is optional with default value
+     * @param parameterBoolean This is a simple boolean that is optional with default value
+     * @param parameterEnum This is a simple enum that is optional with default value
+     * @param parameterModel This is a simple model that is optional with default value
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithDefaultOptionalParameters(
+        parameterString: string = 'Hello World!',
+        parameterNumber: number = 123,
+        parameterBoolean: boolean = true,
+        parameterEnum: 'Success' | 'Warning' | 'Error' = 'Success',
+        parameterModel: ModelWithString = {
+            \\"prop\\": \\"Hello World!\\"
+        },
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
+            method: 'POST',
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
+            query: {
+                'parameterString': parameterString,
+                'parameterNumber': parameterNumber,
+                'parameterBoolean': parameterBoolean,
+                'parameterEnum': parameterEnum,
+                'parameterModel': parameterModel,
+            },
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param parameterStringWithNoDefault This is a string with no default
+     * @param parameterOptionalStringWithDefault This is a optional string with default
+     * @param parameterOptionalStringWithEmptyDefault This is a optional string with empty default
+     * @param parameterOptionalStringWithNoDefault This is a optional string with no default
+     * @param parameterStringWithDefault This is a string with default
+     * @param parameterStringWithEmptyDefault This is a string with empty default
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callToTestOrderOfParams(
+        parameterStringWithNoDefault: string,
+        parameterOptionalStringWithDefault: string = 'Hello World!',
+        parameterOptionalStringWithEmptyDefault: string = '',
+        parameterOptionalStringWithNoDefault?: string,
+        parameterStringWithDefault: string = 'Hello World!',
+        parameterStringWithEmptyDefault: string = '',
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/defaults\`,
+            path: \`/api/v\${this.clientConfig.version}/defaults\`,
             query: {
                 'parameterStringWithNoDefault': parameterStringWithNoDefault,
                 'parameterOptionalStringWithDefault': parameterOptionalStringWithDefault,
@@ -5086,8 +5958,7 @@ export class DefaultsService {
                 'parameterStringWithDefault': parameterStringWithDefault,
                 'parameterStringWithEmptyDefault': parameterStringWithEmptyDefault,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5098,57 +5969,113 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { DuplicateServiceFull } from './DuplicateServiceFull';
 
 export class DuplicateService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: DuplicateServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new DuplicateServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName1(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName1(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName2(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName2(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName3(config?: ClientConfig): Promise<void> {
+        return (await this.full.duplicateName3(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/DuplicateServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class DuplicateServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async duplicateName(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName1(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName1(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName2(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName2(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async duplicateName3(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async duplicateName3(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'DELETE',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/duplicate\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/duplicate\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5159,30 +6086,63 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { HeaderServiceFull } from './HeaderServiceFull';
 
 export class HeaderService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: HeaderServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new HeaderServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns string Successful response
      * @throws ApiError
      */
-    public async callWithResultFromHeader(): Promise<string> {
-        const result = await this.httpRequest.request({
+    public async callWithResultFromHeader(config?: ClientConfig): Promise<string> {
+        return (await this.full.callWithResultFromHeader(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/HeaderServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class HeaderServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns string Successful response
+     * @throws ApiError
+     */
+    public async callWithResultFromHeader(config?: ClientConfig): Promise<ApiResult<string>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/header\`,
+            path: \`/api/v\${this.clientConfig.version}/header\`,
             responseHeader: 'operation-location',
             errors: {
                 400: \`400 server error\`,
                 500: \`500 server error\`,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5193,31 +6153,70 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { MultipartServiceFull } from './MultipartServiceFull';
 
 export class MultipartService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: MultipartServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new MultipartServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns any OK
      * @throws ApiError
      */
-    public async multipartResponse(): Promise<{
+    public async multipartResponse(config?: ClientConfig): Promise<{
         file?: string,
         metadata?: {
             foo?: string,
             bar?: string,
         },
     }> {
-        const result = await this.httpRequest.request({
+        return (await this.full.multipartResponse(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/MultipartServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class MultipartServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns any OK
+     * @throws ApiError
+     */
+    public async multipartResponse(config?: ClientConfig): Promise<ApiResult<{
+        file?: string,
+        metadata?: {
+            foo?: string,
+            bar?: string,
+        },
+    }>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/multipart\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/multipart\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5228,25 +6227,58 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { NoContentServiceFull } from './NoContentServiceFull';
 
 export class NoContentService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: NoContentServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new NoContentServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns void
      * @throws ApiError
      */
-    public async callWithNoContentResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async callWithNoContentResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.callWithNoContentResponse(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/NoContentServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class NoContentServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns void
+     * @throws ApiError
+     */
+    public async callWithNoContentResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/no-content\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/no-content\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5260,13 +6292,18 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 import type {
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ParametersServiceFull } from './ParametersServiceFull';
 
 export class ParametersService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ParametersServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ParametersServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -5276,6 +6313,7 @@ export class ParametersService {
      * @param parameterCookie This is the parameter that goes into the cookie
      * @param parameterPath This is the parameter that goes into the path
      * @param requestBody This is the parameter that goes into the body
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithParameters(
@@ -5285,10 +6323,119 @@ export class ParametersService {
         parameterCookie: string | null,
         parameterPath: string | null,
         requestBody: ModelWithString | null,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.callWithParameters(
+            parameterHeader, parameterQuery, parameterForm, parameterCookie, parameterPath, requestBody, config
+        )).body;
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the request header
+     * @param parameterQuery This is the parameter that goes into the request query params
+     * @param parameterForm This is the parameter that goes into the request form data
+     * @param parameterCookie This is the parameter that goes into the cookie
+     * @param requestBody This is the parameter that goes into the body
+     * @param parameterPath1 This is the parameter that goes into the path
+     * @param parameterPath2 This is the parameter that goes into the path
+     * @param parameterPath3 This is the parameter that goes into the path
+     * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithWeirdParameterNames(
+        parameterHeader: string | null,
+        parameterQuery: string | null,
+        parameterForm: string | null,
+        parameterCookie: string | null,
+        requestBody: ModelWithString | null,
+        parameterPath1?: string,
+        parameterPath2?: string,
+        parameterPath3?: string,
+        _default?: string,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.callWithWeirdParameterNames(
+            parameterHeader, parameterQuery, parameterForm, parameterCookie, requestBody, parameterPath1, parameterPath2, parameterPath3, _default, config
+        )).body;
+    }
+
+    /**
+     * @param requestBody This is a required parameter
+     * @param parameter This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async getCallWithOptionalParam(
+        requestBody: ModelWithString,
+        parameter?: string,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.getCallWithOptionalParam(
+            requestBody, parameter, config
+        )).body;
+    }
+
+    /**
+     * @param parameter This is a required parameter
+     * @param requestBody This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async postCallWithOptionalParam(
+        parameter: string,
+        requestBody?: ModelWithString,
+        config?: ClientConfig
+    ): Promise<void> {
+        return (await this.full.postCallWithOptionalParam(
+            parameter, requestBody, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/ParametersServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ParametersServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterHeader This is the parameter that goes into the header
+     * @param parameterQuery This is the parameter that goes into the query params
+     * @param parameterForm This is the parameter that goes into the form data
+     * @param parameterCookie This is the parameter that goes into the cookie
+     * @param parameterPath This is the parameter that goes into the path
+     * @param requestBody This is the parameter that goes into the body
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async callWithParameters(
+        parameterHeader: string | null,
+        parameterQuery: string | null,
+        parameterForm: string | null,
+        parameterCookie: string | null,
+        parameterPath: string | null,
+        requestBody: ModelWithString | null,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\${parameterPath}\`,
+            path: \`/api/v\${this.clientConfig.version}/parameters/\${parameterPath}\`,
             cookies: {
                 'parameterCookie': parameterCookie,
             },
@@ -5303,8 +6450,7 @@ export class ParametersService {
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
     /**
@@ -5317,6 +6463,7 @@ export class ParametersService {
      * @param parameterPath2 This is the parameter that goes into the path
      * @param parameterPath3 This is the parameter that goes into the path
      * @param _default This is the parameter with a reserved keyword
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async callWithWeirdParameterNames(
@@ -5329,10 +6476,11 @@ export class ParametersService {
         parameterPath2?: string,
         parameterPath3?: string,
         _default?: string,
-    ): Promise<void> {
-        const result = await this.httpRequest.request({
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\${parameterPath1}/\${parameterPath2}/\${parameterPath3}\`,
+            path: \`/api/v\${this.clientConfig.version}/parameters/\${parameterPath1}/\${parameterPath2}/\${parameterPath3}\`,
             cookies: {
                 'PARAMETER-COOKIE': parameterCookie,
             },
@@ -5348,50 +6496,51 @@ export class ParametersService {
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
     /**
      * @param requestBody This is a required parameter
      * @param parameter This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async getCallWithOptionalParam(
         requestBody: ModelWithString,
         parameter?: string,
-    ): Promise<void> {
-        const result = await this.httpRequest.request({
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\`,
+            path: \`/api/v\${this.clientConfig.version}/parameters/\`,
             query: {
                 'parameter': parameter,
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
     /**
      * @param parameter This is a required parameter
      * @param requestBody This is an optional parameter
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async postCallWithOptionalParam(
         parameter: string,
         requestBody?: ModelWithString,
-    ): Promise<void> {
-        const result = await this.httpRequest.request({
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/parameters/\`,
+            path: \`/api/v\${this.clientConfig.version}/parameters/\`,
             query: {
                 'parameter': parameter,
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5405,29 +6554,71 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 import type {
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { RequestBodyServiceFull } from './RequestBodyServiceFull';
 
 export class RequestBodyService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: RequestBodyServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new RequestBodyServiceFull(httpRequest, clientConfig);
     }
 
     /**
      * @param requestBody A reusable request body
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
     public async postRequestBodyService(
         requestBody?: ModelWithString,
+        config?: ClientConfig
     ): Promise<void> {
-        const result = await this.httpRequest.request({
+        return (await this.full.postRequestBodyService(
+            requestBody, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/RequestBodyServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class RequestBodyServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param requestBody A reusable request body
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async postRequestBodyService(
+        requestBody?: ModelWithString,
+        config?: ClientConfig
+    ): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/requestBody/\`,
+            path: \`/api/v\${this.clientConfig.version}/requestBody/\`,
             body: requestBody,
             mediaType: 'application/json',
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5443,66 +6634,129 @@ import type {
     ModelThatExtendsExtends,
     ModelWithString,
 } from '../models';
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { ResponseServiceFull } from './ResponseServiceFull';
 
 export class ResponseService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: ResponseServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new ResponseServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString
      * @throws ApiError
      */
-    public async callWithResponse(): Promise<ModelWithString> {
-        const result = await this.httpRequest.request({
-            method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
-        });
-        return result.body;
+    public async callWithResponse(config?: ClientConfig): Promise<ModelWithString> {
+        return (await this.full.callWithResponse(config)).body;
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns ModelWithString Message for default response
      * @throws ApiError
      */
-    public async callWithDuplicateResponses(): Promise<ModelWithString> {
-        const result = await this.httpRequest.request({
-            method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
-            errors: {
-                500: \`Message for 500 error\`,
-                501: \`Message for 501 error\`,
-                502: \`Message for 502 error\`,
-            },
-        });
-        return result.body;
+    public async callWithDuplicateResponses(config?: ClientConfig): Promise<ModelWithString> {
+        return (await this.full.callWithDuplicateResponses(config)).body;
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @returns any Message for 200 response
      * @returns ModelWithString Message for default response
      * @returns ModelThatExtends Message for 201 response
      * @returns ModelThatExtendsExtends Message for 202 response
      * @throws ApiError
      */
-    public async callWithResponses(): Promise<{
+    public async callWithResponses(config?: ClientConfig): Promise<{
         readonly '@namespace.string'?: string,
         readonly '@namespace.integer'?: number,
         readonly value?: Array<ModelWithString>,
     } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends> {
-        const result = await this.httpRequest.request({
-            method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/response\`,
+        return (await this.full.callWithResponses(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/ResponseServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type {
+    ModelThatExtends,
+    ModelThatExtendsExtends,
+    ModelWithString,
+} from '../models';
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class ResponseServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString
+     * @throws ApiError
+     */
+    public async callWithResponse(config?: ClientConfig): Promise<ApiResult<ModelWithString>> {
+        return this.httpRequest.request({
+            method: 'GET',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns ModelWithString Message for default response
+     * @throws ApiError
+     */
+    public async callWithDuplicateResponses(config?: ClientConfig): Promise<ApiResult<ModelWithString>> {
+        return this.httpRequest.request({
+            method: 'POST',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
             errors: {
                 500: \`Message for 500 error\`,
                 501: \`Message for 501 error\`,
                 502: \`Message for 502 error\`,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @returns any Message for 200 response
+     * @returns ModelWithString Message for default response
+     * @returns ModelThatExtends Message for 201 response
+     * @returns ModelThatExtendsExtends Message for 202 response
+     * @throws ApiError
+     */
+    public async callWithResponses(config?: ClientConfig): Promise<ApiResult<{
+        readonly '@namespace.string'?: string,
+        readonly '@namespace.integer'?: number,
+        readonly value?: Array<ModelWithString>,
+    } | ModelWithString | ModelThatExtends | ModelThatExtendsExtends>> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            path: \`/api/v\${this.clientConfig.version}/response\`,
+            errors: {
+                500: \`Message for 500 error\`,
+                501: \`Message for 501 error\`,
+                502: \`Message for 502 error\`,
+            },
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5513,90 +6767,170 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { SimpleServiceFull } from './SimpleServiceFull';
 
 export class SimpleService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: SimpleServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new SimpleServiceFull(httpRequest, clientConfig);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async getCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.getCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.putCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.postCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.deleteCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.optionsCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.headCallWithoutParametersAndResponse(config)).body;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<void> {
+        return (await this.full.patchCallWithoutParametersAndResponse(config)).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/SimpleServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class SimpleServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param [config] the optional OpenAPI config to use
+     * @throws ApiError
+     */
+    public async getCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async putCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async putCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PUT',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async postCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async postCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async deleteCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async deleteCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'DELETE',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async optionsCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async optionsCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'OPTIONS',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async headCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async headCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'HEAD',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
     /**
+     * @param [config] the optional OpenAPI config to use
      * @throws ApiError
      */
-    public async patchCallWithoutParametersAndResponse(): Promise<void> {
-        const result = await this.httpRequest.request({
+    public async patchCallWithoutParametersAndResponse(config?: ClientConfig): Promise<ApiResult<void>> {
+        return this.httpRequest.request({
             method: 'PATCH',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/simple\`,
-        });
-        return result.body;
+            path: \`/api/v\${this.clientConfig.version}/simple\`,
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5607,13 +6941,18 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { TypesServiceFull } from './TypesServiceFull';
 
 export class TypesService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: TypesServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new TypesServiceFull(httpRequest, clientConfig);
     }
 
     /**
@@ -5625,6 +6964,7 @@ export class TypesService {
      * @param parameterBoolean This is a boolean parameter
      * @param parameterObject This is an object parameter
      * @param id This is a number parameter
+     * @param [config] the optional OpenAPI config to use
      * @returns number Response is a simple number
      * @returns string Response is a simple string
      * @returns boolean Response is a simple boolean
@@ -5640,10 +6980,62 @@ export class TypesService {
         parameterBoolean: boolean | null = true,
         parameterObject: any = null,
         id?: number,
+        config?: ClientConfig
     ): Promise<number | string | boolean | any> {
-        const result = await this.httpRequest.request({
+        return (await this.full.types(
+            parameterArray, parameterDictionary, parameterEnum, parameterNumber, parameterString, parameterBoolean, parameterObject, id, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/TypesServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class TypesServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param parameterArray This is an array parameter
+     * @param parameterDictionary This is a dictionary parameter
+     * @param parameterEnum This is an enum parameter
+     * @param parameterNumber This is a number parameter
+     * @param parameterString This is a string parameter
+     * @param parameterBoolean This is a boolean parameter
+     * @param parameterObject This is an object parameter
+     * @param id This is a number parameter
+     * @param [config] the optional OpenAPI config to use
+     * @returns number Response is a simple number
+     * @returns string Response is a simple string
+     * @returns boolean Response is a simple boolean
+     * @returns any Response is a simple object
+     * @throws ApiError
+     */
+    public async types(
+        parameterArray: Array<string> | null,
+        parameterDictionary: any,
+        parameterEnum: 'Success' | 'Warning' | 'Error' | null,
+        parameterNumber: number = 123,
+        parameterString: string | null = 'default',
+        parameterBoolean: boolean | null = true,
+        parameterObject: any = null,
+        id?: number,
+        config?: ClientConfig
+    ): Promise<ApiResult<number | string | boolean | any>> {
+        return this.httpRequest.request({
             method: 'GET',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/types\`,
+            path: \`/api/v\${this.clientConfig.version}/types\`,
             query: {
                 'parameterArray': parameterArray,
                 'parameterDictionary': parameterDictionary,
@@ -5653,8 +7045,7 @@ export class TypesService {
                 'parameterBoolean': parameterBoolean,
                 'parameterObject': parameterObject,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5665,31 +7056,71 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import { BaseHttpRequest } from '../core';
+import type { BaseHttpRequest, ClientConfig } from '../core';
+import { UploadServiceFull } from './UploadServiceFull';
 
 export class UploadService {
-    private httpRequest: BaseHttpRequest;
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+    readonly full: UploadServiceFull;
 
-    constructor(httpRequest: BaseHttpRequest) {
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
         this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+        this.full = new UploadServiceFull(httpRequest, clientConfig);
     }
 
     /**
      * @param file Supply a file reference for upload
+     * @param [config] the optional OpenAPI config to use
      * @returns boolean
      * @throws ApiError
      */
     public async uploadFile(
         file: Blob,
+        config?: ClientConfig
     ): Promise<boolean> {
-        const result = await this.httpRequest.request({
+        return (await this.full.uploadFile(
+            file, config
+        )).body;
+    }
+
+}"
+`;
+
+exports[`v3 should generate with exportClient: ./test/generated/v3_client/services/UploadServiceFull.ts 1`] = `
+"/* DO NOT EDIT THIS FILE, IT IS GENERATED FROM THE OPEN API SPECIFICATION */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { ApiResult, BaseHttpRequest, ClientConfig } from '../core';
+
+export class UploadServiceFull {
+    private readonly httpRequest: BaseHttpRequest;
+    private readonly clientConfig: ClientConfig;
+
+    constructor(httpRequest: BaseHttpRequest, clientConfig: ClientConfig) {
+        this.httpRequest = httpRequest;
+        this.clientConfig = clientConfig;
+    }
+
+    /**
+     * @param file Supply a file reference for upload
+     * @param [config] the optional OpenAPI config to use
+     * @returns boolean
+     * @throws ApiError
+     */
+    public async uploadFile(
+        file: Blob,
+        config?: ClientConfig
+    ): Promise<ApiResult<boolean>> {
+        return this.httpRequest.request({
             method: 'POST',
-            path: \`/api/v\${this.httpRequest.openApiConfig.VERSION}/upload\`,
+            path: \`/api/v\${this.clientConfig.version}/upload\`,
             formData: {
                 'file': file,
             },
-        });
-        return result.body;
+        }, this.clientConfig, config);
     }
 
 }"
@@ -5701,17 +7132,30 @@ exports[`v3 should generate with exportClient: ./test/generated/v3_client/servic
 /* tslint:disable */
 /* eslint-disable */
 export { CollectionFormatService } from './CollectionFormatService';
+export { CollectionFormatServiceFull } from './CollectionFormatServiceFull';
 export { ComplexService } from './ComplexService';
+export { ComplexServiceFull } from './ComplexServiceFull';
 export { DefaultsService } from './DefaultsService';
+export { DefaultsServiceFull } from './DefaultsServiceFull';
 export { DuplicateService } from './DuplicateService';
+export { DuplicateServiceFull } from './DuplicateServiceFull';
 export { HeaderService } from './HeaderService';
+export { HeaderServiceFull } from './HeaderServiceFull';
 export { MultipartService } from './MultipartService';
+export { MultipartServiceFull } from './MultipartServiceFull';
 export { NoContentService } from './NoContentService';
+export { NoContentServiceFull } from './NoContentServiceFull';
 export { ParametersService } from './ParametersService';
+export { ParametersServiceFull } from './ParametersServiceFull';
 export { RequestBodyService } from './RequestBodyService';
+export { RequestBodyServiceFull } from './RequestBodyServiceFull';
 export { ResponseService } from './ResponseService';
+export { ResponseServiceFull } from './ResponseServiceFull';
 export { SimpleService } from './SimpleService';
+export { SimpleServiceFull } from './SimpleServiceFull';
 export { TypesService } from './TypesService';
+export { TypesServiceFull } from './TypesServiceFull';
 export { UploadService } from './UploadService';
+export { UploadServiceFull } from './UploadServiceFull';
 "
 `;

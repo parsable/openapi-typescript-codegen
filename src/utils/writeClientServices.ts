@@ -8,7 +8,7 @@ import { getHttpRequestName } from './getHttpRequestName';
 import { Templates } from './registerHandlebarTemplates';
 import { sortServicesByName } from './sortServicesByName';
 
-const VERSION_TEMPLATE_STRING = 'OpenAPI.VERSION';
+const VERSION_TEMPLATE_STRING = 'OpenAPI.version';
 
 /**
  * Generate Services using the Handlebar template and write to disk.
@@ -42,6 +42,18 @@ export async function writeClientServices(
             httpClientRequest: getHttpRequestName(httpClient),
         });
         await writeFile(file, format(templateResult));
+
+        const fileFull = resolve(outputPath, `${service.name}Full.ts`);
+        const templateFullResult = templates.services.serviceFull({
+            ...service,
+            httpClient,
+            useUnionTypes,
+            useVersion,
+            useOptions,
+            exportClient,
+            httpClientRequest: getHttpRequestName(httpClient),
+        });
+        await writeFile(fileFull, format(templateFullResult));
     }
 
     await writeFile(resolve(outputPath, 'index.ts'), templates.services.index({ services: sortServicesByName(services) }));

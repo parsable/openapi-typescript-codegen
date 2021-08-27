@@ -12,6 +12,7 @@ import fetchGetResponseHeader from '../templates/core/fetch/getResponseHeader.hb
 import fetchRequest from '../templates/core/fetch/request.hbs';
 import fetchSendRequest from '../templates/core/fetch/sendRequest.hbs';
 import functionCatchErrors from '../templates/core/functions/catchErrors.hbs';
+import functionDeepAssign from '../templates/core/functions/deepAssign.hbs';
 import functionGetFormData from '../templates/core/functions/getFormData.hbs';
 import functionGetQueryString from '../templates/core/functions/getQueryString.hbs';
 import functionGetUrl from '../templates/core/functions/getUrl.hbs';
@@ -51,6 +52,7 @@ import partialIsNullable from '../templates/partials/isNullable.hbs';
 import partialIsReadOnly from '../templates/partials/isReadOnly.hbs';
 import partialIsRequired from '../templates/partials/isRequired.hbs';
 import partialParameters from '../templates/partials/parameters.hbs';
+import partialPassParameters from '../templates/partials/passParameters.hbs';
 import partialResult from '../templates/partials/result.hbs';
 import partialSchema from '../templates/partials/schema.hbs';
 import partialSchemaArray from '../templates/partials/schemaArray.hbs';
@@ -71,6 +73,7 @@ import partialTypeUnion from '../templates/partials/typeUnion.hbs';
 import templateExportSchema from '../templates/schemas/exportSchema.hbs';
 import templateExportSchemaIndex from '../templates/schemas/index.hbs';
 import templateExportService from '../templates/services/exportService.hbs';
+import templateExportServiceFull from '../templates/services/exportServiceFull.hbs';
 import templateExportServiceIndex from '../templates/services/index.hbs';
 import { registerHandlebarHelpers } from './registerHandlebarHelpers';
 
@@ -83,6 +86,7 @@ export interface Templates {
     };
     services: {
         service: Handlebars.TemplateDelegate;
+        serviceFull: Handlebars.TemplateDelegate;
         index: Handlebars.TemplateDelegate;
     };
     schemas: {
@@ -122,6 +126,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
         },
         services: {
             service: Handlebars.template(templateExportService),
+            serviceFull: Handlebars.template(templateExportServiceFull),
             index: Handlebars.template(templateExportServiceIndex),
         },
         schemas: {
@@ -154,6 +159,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     Handlebars.registerPartial('isReadOnly', Handlebars.template(partialIsReadOnly));
     Handlebars.registerPartial('isRequired', Handlebars.template(partialIsRequired));
     Handlebars.registerPartial('parameters', Handlebars.template(partialParameters));
+    Handlebars.registerPartial('passParameters', Handlebars.template(partialPassParameters));
     Handlebars.registerPartial('result', Handlebars.template(partialResult));
     Handlebars.registerPartial('schema', Handlebars.template(partialSchema));
     Handlebars.registerPartial('schemaArray', Handlebars.template(partialSchemaArray));
@@ -184,6 +190,7 @@ export function registerHandlebarTemplates(root: { httpClient: HttpClient; useOp
     Handlebars.registerPartial('functions/isString', Handlebars.template(functionIsString));
     Handlebars.registerPartial('functions/isStringWithValue', Handlebars.template(functionIsStringWithValue));
     Handlebars.registerPartial('functions/isSuccess', Handlebars.template(functionIsSuccess));
+    Handlebars.registerPartial('functions/deepAssign', Handlebars.template(functionDeepAssign));
     Handlebars.registerPartial('functions/resolve', Handlebars.template(functionResolve));
 
     // Specific files for the fetch client implementation
