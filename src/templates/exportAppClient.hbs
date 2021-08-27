@@ -16,15 +16,15 @@ export class {{{clientName}}} {
     readonly {{{shortName}}}: {{{name}}};
 {{/each}}
 
-    constructor(ClientConfig: ClientConfig, httpClient: BaseHttpRequest = new {{{httpClientRequest}}}()) {
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new {{{httpClientRequest}}}()) {
         const config = {
-            baseUrl: ClientConfig?.baseUrl ?? '{{{server}}}',
-            version: ClientConfig?.version ?? '{{{version}}}',
-            withCredentials: ClientConfig?.withCredentials ?? false,
-            token: ClientConfig?.token,
-            username: ClientConfig?.username,
-            password: ClientConfig?.password,
-            headers: ClientConfig?.headers,
+            baseUrl: clientConfig?.baseUrl ?? '{{{server}}}',
+            version: clientConfig?.version ?? '{{{version}}}',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
         }
         {{#each services}}
         this.{{{shortName}}} = new {{{name}}}(httpClient, config);
