@@ -10,8 +10,11 @@ import {
 {{/each}}
 } from './services';
 {{/if}}
+{{#if service}}
+import { {{{service.name}}} } from './services';
+{{/if}}
 
-export class {{{clientName}}} {
+export class {{{clientName}}} {{#if service}}extends {{{service.name}}} {{/if}}{
 {{#each services}}
     readonly {{{shortName}}}: {{{name}}};
 {{/each}}
@@ -26,6 +29,9 @@ export class {{{clientName}}} {
             password: clientConfig?.password,
             headers: clientConfig?.headers,
         }
+        {{#if service}}
+        super(httpClient, config);
+        {{/if}}
         {{#each services}}
         this.{{{shortName}}} = new {{{name}}}(httpClient, config);
         {{/each}}
