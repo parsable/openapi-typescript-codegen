@@ -1,0 +1,39 @@
+{{>header}}
+
+import type { BaseHttpRequest } from './core';
+import { {{{httpClientRequest}}} } from './core';
+import type { ClientConfig } from './core';
+{{#if services}}
+import {
+{{#each services}}
+    {{{name}}},
+{{/each}}
+} from './services';
+{{/if}}
+{{#if service}}
+import { {{{service.name}}} } from './services';
+{{/if}}
+
+export class {{{clientName}}} {{#if service}}extends {{{service.name}}} {{/if}}{
+{{#each services}}
+    readonly {{{shortName}}}: {{{name}}};
+{{/each}}
+
+    constructor(clientConfig: ClientConfig, httpClient: BaseHttpRequest = new {{{httpClientRequest}}}()) {
+        const config = {
+            baseUrl: clientConfig?.baseUrl ?? '{{{server}}}',
+            version: clientConfig?.version ?? '{{{version}}}',
+            withCredentials: clientConfig?.withCredentials ?? false,
+            token: clientConfig?.token,
+            username: clientConfig?.username,
+            password: clientConfig?.password,
+            headers: clientConfig?.headers,
+        }
+        {{#if service}}
+        super(httpClient, config);
+        {{/if}}
+        {{#each services}}
+        this.{{{shortName}}} = new {{{name}}}(httpClient, config);
+        {{/each}}
+    }
+}
