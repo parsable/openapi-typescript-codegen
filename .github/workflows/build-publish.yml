@@ -1,7 +1,7 @@
 name: build-publish
 permissions:
   contents: write
-  id-token: write
+  id-token: read
   packages: write
 
 on:
@@ -21,10 +21,14 @@ jobs:
 #    if: github.event.pull_request.merged == true
     timeout-minutes: 20
     steps:
+    - name: testing token
+      run: |
+          echo bot_token?: ${{ secrets.GH_PARSABLE_BOT_BYPASS == ''}}
+          echo bot_token?: ${{ secrets.GH_PAT_CLASSIC_MACHINE_PARSABLE == ''}}
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        token: ${{secrets.GH_PAT_CLASSIC_MACHINE_PARSABLE}}
+        token: ${{ secrets.GH_PARSABLE_BOT_BYPASS }}
         ref: GHA-publish
         fetch-depth: 0
     - name: Setup Node
