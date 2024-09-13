@@ -1,0 +1,57 @@
+name: build-publish
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - master
+
+jobs:
+  build-publish:
+    name: build publish artifact
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    timeout-minutes: 20
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: master
+        fetch-depth: 0
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 16.x
+        registry-url: https://npm.pkg.github.com/
+        scope: '@parsable'
+        cache: yarn
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.GH_PAT_CLASSIC_MACHINE_PARSABLE}}
+    - name: Install Dependencies
+      run: yarn install
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.GH_PAT_CLASSIC_MACHINE_PARSABLE}}
+    - name: Tag
+      id: tag
+      run: |
+        truncated_version=1.0.4
+        git config --global user.email "ops+machine-parsable@parsable.com"
+        git config --global user.name "machine-parsable"
+        npm version -m "Updating package.json for version ${truncated_version}" ${truncated_version}
+        git pull --ff-only
+        git push origin $(git branch --show-current) --tags
+        git status
+        echo "new_tag=${truncated_version}" >> $GITHUB_OUTPUT
+    - name: Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_PARSABLE_BOT_BYPASS }}
+      run: gh release create "${{steps.version.outputs.version}}"
+    - name: publishing artifact
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
