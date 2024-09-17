@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "bot: update npm dependencies: "
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "[no-jira] bot: update github-actions image to "
+
